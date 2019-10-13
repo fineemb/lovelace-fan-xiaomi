@@ -4,7 +4,7 @@
  * @Description   : 
  * @Date          : 2019-10-13 17:46:58
  * @LastEditors   : fineemb
- * @LastEditTime  : 2019-10-13 18:16:19
+ * @LastEditTime  : 2019-10-13 18:27:00
  -->
 # 小米电风扇卡片
 +  这个卡片插件是用于HASS, 支持HACS安装
@@ -23,3 +23,4 @@ resources:
 ```
 ## 请你欣赏
 ![](01.gif)
+![](02.jpg)
