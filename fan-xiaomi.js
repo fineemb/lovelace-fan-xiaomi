@@ -4,7 +4,7 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2019-10-13 16:10:07
+ * @LastEditTime  : 2019-10-13 21:16:10
  */
 
 class FanXiaomi extends HTMLElement {
@@ -180,451 +180,75 @@ class FanXiaomi extends HTMLElement {
 /*********************************** UI设置 ************************************/
 getUI() {
 
+  let csss='';
+  for(var i=1;i<73;i++){
+    csss+='.ang'+i+` {
+        transform: rotate(`+(i-1)*5+`deg);
+    }`
+  }
+  let fans='';
+  for(var i=1;i<73;i++){
+    fans+=`<div class="fan ang`+i+`"></div>`
+  }
+  let fan1s='';
+  for(var i=1;i<73;i+=2){
+    fan1s+=`<div class="fan1 ang`+i+`"></div>`
+  }
   let fanbox = document.createElement('div')
   fanbox.className = 'fan-xiaomi-panel'
   fanbox.innerHTML = `
 <style>
-.fan-xiaomi {
-  position: relative;
-  height: 335px;
-  overflow: hidden;
-  width: 100%;
-}
-.offline{
-  opacity: 0.3;
-}
-.icon {
-  width: 2em;
-  height: 2em;
-  vertical-align: -0.15em;
-  fill: gray;
-  overflow: hidden;
-}
-.fan-xiaomi-panel {
-  width: 100%;
-}
-.fan-xiaomi-panel {
-  top: 0;
-  position: absolute;
-}
-p {
-  padding: 0;
-  margin: 0;
-}
-.fan-xiaomi-panel {
-  text-align: center;
-}
-.title {
-  margin-top: 20px;
-  cursor: pointer;
-  height: 35px;
-}
-.title p {
-  font-size: 18px;
-  padding: 0;
-  margin: 0;
-  font-weight: bold;
-}
-.title span {
-  font-size: 12px;
-}
-.attr-row {
-  display: flex;
-}
-.attr-row .attr {
-  width: 100%;
-}
-.attr-row .attr-title {
-  font-size: 12px;
-}
-.attr-row .attr-value {
-  font-size: 14px;
-}
-.attr-row .attr:nth-child(2) {
-  border-left: 1px solid #01be9e;
-  border-right: 1px solid #01be9e;
-}
-.op-row {
-  display: flex;
-  padding: 10px;
-  border-top: 3px #717376 solid !important;
-}
-.op-row .op {
-  width: 100%;
-}
-.op-row .op button {
-  background: transparent;
-  border: none;
-  outline: none;
-  cursor: pointer;
-}
-.op-row .op .icon-waper {
-  display: block;
-  width: 30px;
-  height: 30px;
-  margin-bottom: 5px;
-}
-.op-row .op.active button {
-  color:#01be9e !important;
-  text-shadow: 0 0 10px #01be9e;
-}
-.ang1 {
-  transform: rotate(0deg);
-}
-.ang2 {
-  transform: rotate(5deg);
-}
-.ang3 {
-  transform: rotate(10deg);
-}
-.ang4 {
-  transform: rotate(15deg);
-}
-.ang5 {
-  transform: rotate(20deg);
-}
-.ang6 {
-  transform: rotate(25deg);
-}
-.ang7 {
-  transform: rotate(30deg);
-}
-.ang8 {
-  transform: rotate(35deg);
-}
-.ang9 {
-  transform: rotate(40deg);
-}
-.ang10 {
-  transform: rotate(45deg);
-}
-.ang11 {
-  transform: rotate(50deg);
-}
-.ang12 {
-  transform: rotate(55deg);
-}
-.ang13 {
-  transform: rotate(60deg);
-}
-.ang14 {
-  transform: rotate(65deg);
-}
-.ang15 {
-  transform: rotate(70deg);
-}
-.ang16 {
-  transform: rotate(75deg);
-}
-.ang17 {
-  transform: rotate(80deg);
-}
-.ang18 {
-  transform: rotate(85deg);
-}
-.ang19 {
-  transform: rotate(90deg);
-}
-.ang20 {
-  transform: rotate(95deg);
-}
-.ang21 {
-  transform: rotate(100deg);
-}
-.ang22 {
-  transform: rotate(105deg);
-}
-.ang23 {
-  transform: rotate(110deg);
-}
-.ang24 {
-  transform: rotate(115deg);
-}
-.ang25 {
-  transform: rotate(120deg);
-}
-.ang26 {
-  transform: rotate(125deg);
-}
-.ang27 {
-  transform: rotate(130deg);
-}
-.ang28 {
-  transform: rotate(135deg);
-}
-.ang29 {
-  transform: rotate(140deg);
-}
-.ang30 {
-  transform: rotate(145deg);
-}
-.ang31 {
-  transform: rotate(150deg);
-}
-.ang32 {
-  transform: rotate(155deg);
-}
-.ang33 {
-  transform: rotate(160deg);
-}
-.ang34 {
-  transform: rotate(165deg);
-}
-.ang35 {
-  transform: rotate(170deg);
-}
-.ang36 {
-  transform: rotate(175deg);
-}
-.ang37 {
-  transform: rotate(180deg);
-}
-.ang38 {
-  transform: rotate(185deg);
-}
-.ang39 {
-  transform: rotate(190deg);
-}
-.ang40 {
-  transform: rotate(195deg);
-}
-.ang41 {
-  transform: rotate(200deg);
-}
-.ang42 {
-  transform: rotate(205deg);
-}
-.ang43 {
-  transform: rotate(210deg);
-}
-.ang44 {
-  transform: rotate(215deg);
-}
-.ang45 {
-  transform: rotate(220deg);
-}
-.ang46 {
-  transform: rotate(225deg);
-}
-.ang47 {
-  transform: rotate(230deg);
-}
-.ang48 {
-  transform: rotate(235deg);
-}
-.ang49 {
-  transform: rotate(240deg);
-}
-.ang50 {
-  transform: rotate(245deg);
-}
-.ang51 {
-  transform: rotate(250deg);
-}
-.ang52 {
-  transform: rotate(255deg);
-}
-.ang53 {
-  transform: rotate(260deg);
-}
-.ang54 {
-  transform: rotate(265deg);
-}
-.ang55 {
-  transform: rotate(270deg);
-}
-.ang56 {
-  transform: rotate(275deg);
-}
-.ang57 {
-  transform: rotate(280deg);
-}
-.ang58 {
-  transform: rotate(285deg);
-}
-.ang59 {
-  transform: rotate(290deg);
-}
-.ang60 {
-  transform: rotate(295deg);
-}
-.ang61 {
-  transform: rotate(300deg);
-}
-.ang62 {
-  transform: rotate(305deg);
-}
-.ang63 {
-  transform: rotate(310deg);
-}
-.ang64 {
-  transform: rotate(315deg);
-}
-.ang65 {
-  transform: rotate(320deg);
-}
-.ang66 {
-  transform: rotate(325deg);
-}
-.ang67 {
-  transform: rotate(330deg);
-}
-.ang68 {
-  transform: rotate(335deg);
-}
-.ang69 {
-  transform: rotate(340deg);
-}
-.ang70 {
-  transform: rotate(345deg);
-}
-.ang71 {
-  transform: rotate(350deg);
-}
-.ang72 {
-  transform: rotate(355deg);
-}
-.fanbox {
-  background: #80808061;
-  width: 150px;
-  height: 150px;
-  position: relative;
-  border-radius: 50%;
-  margin: 10px auto;
-}
-.fanbox.active.oscillat {
-  animation: oscillate 8s infinite linear;
-}
-.blades div {
-  height: 35%;
-  width: 35%;
-  position: absolute;
-  transform-origin: 100% 100%;
-  border-radius: 100% 50% 0%;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.8);
-  background: rgb(152, 152, 152);
-  margin: 15% 0 0 15%;
-}
-.blades {
-  height: 100%;
-  width: 100%;
-}
-.fanbox.active .blades {
-  animation: blades 3s infinite linear;
-  transform-origin: 50% 50%;
-  transform-box: fill-box !important;
-}
-.fan {
-  background: white;
-  width: 1%;
-  height: 20%;
-  margin-left: 50%;
-  transform-origin: 0 250%;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-.fan1 {
-  background: white;
-  width: 1%;
-  height: 20%;
-  margin-left: 50%;
-  transform-origin: 0 150%;
-  position: absolute;
-  top: 20%;
-  left: 0;
-}
-.c1 {
-  position: absolute;
-  top: 20%;
-  left: 20%;
-  border: 2px solid white;
-  width: 60%;
-  height: 60%;
-  border-radius: 50%;
-  box-sizing: border-box;
-  baskground: #ffffff00;
-  cursor: pointer;
-}
-.c2 {
-  position: absolute;
-  top: 0;
-  left: 0;
-  border: 10px solid #f7f7f7;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  box-sizing: border-box;
-}
-.c3 {
-  position: absolute;
-  top: 40%;
-  left: 40%;
-  width: 20%;
-  height: 20%;
-  background: white;
-  color: #ddd;
-  border-radius: 50%;
-  box-sizing: border-box;
-}
-.c3.active{
-  border: 2px solid #8dd5c3;
-}
-.c3 span iron-icon{
-  width: 100%;
-  height: 100%;
-}
-.chevron {
-  top: 0;
-  position: absolute;
-  height: 100%;
-  opacity:0;
-}
-.show {
-  opacity:1;
-}
-.hidden {
-  opacity:0;
-}
-.chevron.left {
-  left:-30px
-}
-.chevron.right {
-  right:-30px
-}
-.chevron span,.chevron span iron-icon{
-  height: 100%;
-  width: 30px;
-}
-/* Animation */
-@keyframes blades {
-  from {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  to {
-    transform: translate(0, 0) rotate(3600deg);
-  }
-}
-@keyframes oscillate {
-  0% {
-    transform: perspective(10em) rotateY(0deg);
-  }
-  20% {
-    transform: perspective(10em) rotateY(40deg);
-  }
-  40% {
-    transform: perspective(10em) rotateY(0deg);
-  }
-  60% {
-    transform: perspective(10em) rotateY(-40deg);
-  }
-  80% {
-    transform: perspective(10em) rotateY(0deg);
-  }
-  100% {
-    transform: perspective(10em) rotateY(40deg);
-  }
-}
+.fan-xiaomi{position:relative;overflow:hidden;width:100%;height:335px}
+.offline{opacity:0.3}
+.icon{overflow:hidden;width:2em;height:2em;vertical-align:-.15em;fill:gray}
+.fan-xiaomi-panel{position:absolute;top:0;width:100%;text-align:center}
+p{margin:0;padding:0}
+.title{margin-top:20px;height:35px;cursor:pointer}
+.title p{margin:0;padding:0;font-weight:700;font-size:18px}
+.title span{font-size:9pt}
+.attr-row{display:flex}
+.attr-row .attr{width:100%}
+.attr-row .attr-title{font-size:9pt}
+.attr-row .attr-value{font-size:14px}
+.attr-row .attr:nth-child(2){border-right:1px solid #01be9e;border-left:1px solid #01be9e}
+.op-row{display:flex;padding:10px;border-top:3px solid #717376!important}
+.op-row .op{width:100%}
+.op-row .op button{outline:0;border:none;background:0 0;cursor:pointer}
+.op-row .op .icon-waper{display:block;margin-bottom:5px;width:30px;height:30px}
+.op-row .op.active button{color:#01be9e!important;text-shadow:0 0 10px #01be9e}
+`+csss+`
+.fanbox{position:relative;margin:10px auto;width:150px;height:150px;border-radius:50%;background:#80808061}
+.fanbox.active.oscillat{animation:oscillate 8s infinite linear}
+.blades div{position:absolute;margin:15% 0 0 15%;width:35%;height:35%;border-radius:100% 50% 0;background:#989898;transform-origin:100% 100%}
+.blades{width:100%;height:100%}
+.fanbox.active .blades{transform-origin:50% 50%;animation:blades 3s infinite linear;transform-box:fill-box!important}
+.fan{top:0;transform-origin:0 250%}
+.fan,.fan1{position:absolute;left:0;margin-left:50%;width:1%;height:20%;background:#fff}
+.fan1{top:20%;transform-origin:0 150%}
+.c1{top:20%;left:20%;width:60%;height:60%;border:2px solid #fff;border-radius:50%;cursor:pointer;baskground:#ffffff00}
+.c1,.c2{position:absolute;box-sizing:border-box}
+.c2{top:0;left:0;width:100%;height:100%;border:10px solid #f7f7f7;border-radius:50%}
+.c3{position:absolute;top:40%;left:40%;box-sizing:border-box;width:20%;height:20%;border-radius:50%;background:#fff;color:#ddd}
+.c3.active{border:2px solid #8dd5c3}
+.c3 span iron-icon{width:100%;height:100%}
+.chevron{position:absolute;top:0;height:100%;opacity:0}
+.show{opacity:1}
+.hidden{opacity:0}
+.chevron.left{left:-30px}
+.chevron.right{right:-30px}
+.chevron span,.chevron span iron-icon{width:30px;height:100%}
+
+@keyframes blades{0%{transform:translate(0,0) rotate(0)}
+to{transform:translate(0,0) rotate(3600deg)}
+}
+@keyframes oscillate{0%{transform:perspective(10em) rotateY(0)}
+20%{transform:perspective(10em) rotateY(40deg)}
+40%{transform:perspective(10em) rotateY(0)}
+60%{transform:perspective(10em) rotateY(-40deg)}
+80%{transform:perspective(10em) rotateY(0)}
+to{transform:perspective(10em) rotateY(40deg)}
+}
+
 
 </style>
 <div class="title">
@@ -636,114 +260,7 @@ p {
     <div class="b2 ang25"></div>
     <div class="b3 ang49"></div>
   </div>
-  <div class="fan ang1"></div>
-  <div class="fan ang2"></div>
-  <div class="fan ang3"></div>
-  <div class="fan ang4"></div>
-  <div class="fan ang5"></div>
-  <div class="fan ang6"></div>
-  <div class="fan ang7"></div>
-  <div class="fan ang8"></div>
-  <div class="fan ang9"></div>
-  <div class="fan ang10"></div>
-  <div class="fan ang11"></div>
-  <div class="fan ang12"></div>
-  <div class="fan ang13"></div>
-  <div class="fan ang14"></div>
-  <div class="fan ang15"></div>
-  <div class="fan ang16"></div>
-  <div class="fan ang17"></div>
-  <div class="fan ang18"></div>
-  <div class="fan ang19"></div>
-  <div class="fan ang20"></div>
-  <div class="fan ang21"></div>
-  <div class="fan ang22"></div>
-  <div class="fan ang23"></div>
-  <div class="fan ang24"></div>
-  <div class="fan ang25"></div>
-  <div class="fan ang26"></div>
-  <div class="fan ang27"></div>
-  <div class="fan ang28"></div>
-  <div class="fan ang29"></div>
-  <div class="fan ang30"></div>
-  <div class="fan ang31"></div>
-  <div class="fan ang32"></div>
-  <div class="fan ang33"></div>
-  <div class="fan ang34"></div>
-  <div class="fan ang35"></div>
-  <div class="fan ang36"></div>
-  <div class="fan ang37"></div>
-  <div class="fan ang38"></div>
-  <div class="fan ang39"></div>
-  <div class="fan ang40"></div>
-  <div class="fan ang41"></div>
-  <div class="fan ang42"></div>
-  <div class="fan ang43"></div>
-  <div class="fan ang44"></div>
-  <div class="fan ang45"></div>
-  <div class="fan ang46"></div>
-  <div class="fan ang47"></div>
-  <div class="fan ang48"></div>
-  <div class="fan ang49"></div>
-  <div class="fan ang50"></div>
-  <div class="fan ang51"></div>
-  <div class="fan ang52"></div>
-  <div class="fan ang53"></div>
-  <div class="fan ang54"></div>
-  <div class="fan ang55"></div>
-  <div class="fan ang56"></div>
-  <div class="fan ang57"></div>
-  <div class="fan ang58"></div>
-  <div class="fan ang59"></div>
-  <div class="fan ang60"></div>
-  <div class="fan ang61"></div>
-  <div class="fan ang62"></div>
-  <div class="fan ang63"></div>
-  <div class="fan ang64"></div>
-  <div class="fan ang65"></div>
-  <div class="fan ang66"></div>
-  <div class="fan ang67"></div>
-  <div class="fan ang68"></div>
-  <div class="fan ang69"></div>
-  <div class="fan ang70"></div>
-  <div class="fan ang71"></div>
-  <div class="fan ang72"></div>
-  <div class="fan1 ang1"></div>
-  <div class="fan1 ang3"></div>
-  <div class="fan1 ang5"></div>
-  <div class="fan1 ang7"></div>
-  <div class="fan1 ang9"></div>
-  <div class="fan1 ang11"></div>
-  <div class="fan1 ang13"></div>
-  <div class="fan1 ang15"></div>
-  <div class="fan1 ang17"></div>
-  <div class="fan1 ang19"></div>
-  <div class="fan1 ang21"></div>
-  <div class="fan1 ang23"></div>
-  <div class="fan1 ang25"></div>
-  <div class="fan1 ang27"></div>
-  <div class="fan1 ang29"></div>
-  <div class="fan1 ang31"></div>
-  <div class="fan1 ang33"></div>
-  <div class="fan1 ang35"></div>
-  <div class="fan1 ang37"></div>
-  <div class="fan1 ang39"></div>
-  <div class="fan1 ang41"></div>
-  <div class="fan1 ang43"></div>
-  <div class="fan1 ang45"></div>
-  <div class="fan1 ang47"></div>
-  <div class="fan1 ang49"></div>
-  <div class="fan1 ang51"></div>
-  <div class="fan1 ang53"></div>
-  <div class="fan1 ang55"></div>
-  <div class="fan1 ang57"></div>
-  <div class="fan1 ang59"></div>
-  <div class="fan1 ang61"></div>
-  <div class="fan1 ang63"></div>
-  <div class="fan1 ang65"></div>
-  <div class="fan1 ang67"></div>
-  <div class="fan1 ang69"></div>
-  <div class="fan1 ang71"></div>
+  `+fans+fan1s+`
   <div class="c2"></div>
   <div class="c3">
     <span class="icon-waper">
