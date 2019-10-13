@@ -1,0 +1,6 @@
+{
+    "name": "小米电风扇",
+    "country": "NO",
+    "domains": ["fan"],
+    "homeassistant": "0.99.0",
+  }
