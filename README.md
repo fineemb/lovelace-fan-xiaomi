@@ -21,6 +21,11 @@ resources:
   - url: /community_plugin/lovelace-fan-xiaomi/fan-xiaomi.js?v=0.2
     type: js
 ```
+``` yaml
+      - type: 'custom:fan-xiaomi'
+        name: 测试
+        entity: fan.zhi_neng_dian_feng_shan_1
+```
 ## 请你欣赏
 ![](01.gif)
 ![](02.jpg)
