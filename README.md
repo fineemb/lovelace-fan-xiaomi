@@ -7,7 +7,7 @@
  * @LastEditTime  : 2019-10-13 18:27:00
  -->
 # 小米电风扇卡片
-+  这个卡片插件基于CSS实现,是用于HASS, 支持HACS安装
++  这个卡片插件基于CSS实现,是用于HASS, 支持[HACS](https://github.com/custom-components/hacs)安装
 +  支持对小米风扇的各种操作
 +  独特的动画效果
 
