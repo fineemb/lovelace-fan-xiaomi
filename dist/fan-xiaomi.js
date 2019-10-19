@@ -4,7 +4,7 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2019-10-13 21:16:10
+ * @LastEditTime  : 2019-10-19 08:25:53
  */
 
 class FanXiaomi extends HTMLElement {
@@ -23,145 +23,152 @@ class FanXiaomi extends HTMLElement {
         card.className = 'fan-xiaomi';
         card.appendChild(ui);
         card.classList.add('offline');
+
+        let styleElement = document.createElement('style');
+        styleElement.innerHTML = `.fan-xiaomi{height: 64px;}`;
+        card.appendChild(styleElement);
+
         this.card = card;
         this.appendChild(card);
         ui.querySelector('.var-title').textContent = this.config.name+'(离线)';
-        return;
       }
-    }
-
-    const attrs = state.attributes;
-    const temperature = attrs['temperature'] || "--";
-    const humidity = attrs['humidity'] || "--";
-
-    if (!this.card) {
-
-      const card = document.createElement('ha-card');
-      card.className = 'fan-xiaomi'
-
-      // 创建UI
-      card.appendChild(ui)
-
-      //调整风扇角度事件绑定
-      ui.querySelector('.left').onmouseover = () => {
-        ui.querySelector('.left').classList.replace('hidden','show')
-      }
-      ui.querySelector('.left').onmouseout = () => {
-        ui.querySelector('.left').classList.replace('show','hidden')
-      }
-      ui.querySelector('.left').onclick = () => {
-        this.log('左转5度')
-        if(state==="on"){
-          hass.callService('fan', 'set_direction', {
-            entity_id: entityId,
-            direction: "left"
-          });
-      }
-      }
-      ui.querySelector('.right').onmouseover = () => {
-        ui.querySelector('.right').classList.replace('hidden','show')
-      }
-      ui.querySelector('.right').onmouseout = () => {
-        ui.querySelector('.right').classList.replace('show','hidden')
-      }
-      ui.querySelector('.right').onclick = () => {
-        this.log('左转5度')
-        if(state==="on"){
-          hass.callService('fan', 'set_direction', {
-            entity_id: entityId,
-            direction: "right"
+    }else{
+      const attrs = state.attributes;
+      const temperature = attrs['temperature'] || "--";
+      const humidity = attrs['humidity'] || "--";
+  
+      if (!this.card) {
+  
+        const card = document.createElement('ha-card');
+        card.className = 'fan-xiaomi'
+  
+        // 创建UI
+        card.appendChild(ui)
+  
+        //调整风扇角度事件绑定
+        ui.querySelector('.left').onmouseover = () => {
+          ui.querySelector('.left').classList.replace('hidden','show')
+        }
+        ui.querySelector('.left').onmouseout = () => {
+          ui.querySelector('.left').classList.replace('show','hidden')
+        }
+        ui.querySelector('.left').onclick = () => {
+          this.log('左转5度')
+          if(state==="on"){
+            hass.callService('fan', 'set_direction', {
+              entity_id: entityId,
+              direction: "left"
+            });
+        }
+        }
+        ui.querySelector('.right').onmouseover = () => {
+          ui.querySelector('.right').classList.replace('hidden','show')
+        }
+        ui.querySelector('.right').onmouseout = () => {
+          ui.querySelector('.right').classList.replace('show','hidden')
+        }
+        ui.querySelector('.right').onclick = () => {
+          this.log('左转5度')
+          if(state==="on"){
+            hass.callService('fan', 'set_direction', {
+              entity_id: entityId,
+              direction: "right"
+            });
+          }
+          return false;
+        }
+        // 定义事件
+        ui.querySelector('.c1').onclick = () => {
+          this.log('开关')
+          hass.callService('fan', 'toggle', {
+            entity_id: entityId
           });
         }
-        return false;
-      }
-      // 定义事件
-      ui.querySelector('.c1').onclick = () => {
-        this.log('开关')
-        hass.callService('fan', 'toggle', {
-          entity_id: entityId
-        });
-      }
-      ui.querySelector('.var-lock').onclick = () => {
-        this.log('童锁')
-        let u = ui.querySelector('.var-lock')
-        if (u.classList.contains('active') === false) {
-          u.classList.add('active')
-          hass.callService('fan', 'xiaomi_miio_set_child_lock_on', {
-              entity_id: entityId
-          });
-        }else{
-          u.classList.remove('active')
-            hass.callService('fan', 'xiaomi_miio_set_child_lock_off', {
+        ui.querySelector('.var-lock').onclick = () => {
+          this.log('童锁')
+          let u = ui.querySelector('.var-lock')
+          if (u.classList.contains('active') === false) {
+            u.classList.add('active')
+            hass.callService('fan', 'xiaomi_miio_set_child_lock_on', {
                 entity_id: entityId
             });
-        } 
-      }
-      ui.querySelector('.var-natural').onclick = () => {
-        //this.log('自然')
-        let nowspeed = attrs['direct_speed'];
-        let u = ui.querySelector('.var-natural')
-        if (u.classList.contains('active') === false) {
-          nowspeed = attrs['direct_speed'];
-          u.classList.add('active')
-          u.innerHTML = '<button><span class="icon-waper"><iron-icon icon="mdi:leaf"></iron-icon></span>自然</button>'
-          hass.callService('fan', 'xiaomi_miio_set_natural_mode_on', {
-              entity_id: entityId
-          });
-          hass.callService('fan', 'SET_SPEED', {  
-            entity_id: entityId,
-            speed: nowspeed
-          });
-        }else{
-          u.classList.remove('active')
-          u.innerHTML = '<button><span class="icon-waper"><iron-icon icon="mdi:weather-windy"></iron-icon></span>直吹</button>'
-            hass.callService('fan', 'xiaomi_miio_set_natural_mode_off', {
+          }else{
+            u.classList.remove('active')
+              hass.callService('fan', 'xiaomi_miio_set_child_lock_off', {
+                  entity_id: entityId
+              });
+          } 
+        }
+        ui.querySelector('.var-natural').onclick = () => {
+          //this.log('自然')
+          let nowspeed = attrs['direct_speed'];
+          let u = ui.querySelector('.var-natural')
+          if (u.classList.contains('active') === false) {
+            nowspeed = attrs['direct_speed'];
+            u.classList.add('active')
+            u.innerHTML = '<button><span class="icon-waper"><iron-icon icon="mdi:leaf"></iron-icon></span>自然</button>'
+            hass.callService('fan', 'xiaomi_miio_set_natural_mode_on', {
                 entity_id: entityId
             });
-            nowspeed = attrs['natural_speed'];
             hass.callService('fan', 'SET_SPEED', {  
               entity_id: entityId,
               speed: nowspeed
             });
+          }else{
+            u.classList.remove('active')
+            u.innerHTML = '<button><span class="icon-waper"><iron-icon icon="mdi:weather-windy"></iron-icon></span>直吹</button>'
+              hass.callService('fan', 'xiaomi_miio_set_natural_mode_off', {
+                  entity_id: entityId
+              });
+              nowspeed = attrs['natural_speed'];
+              hass.callService('fan', 'SET_SPEED', {  
+                entity_id: entityId,
+                speed: nowspeed
+              });
+  
+          } 
+        }
+        ui.querySelector('.var-oscillating').onclick = () => {
+          this.log('摆头')
+          let u = ui.querySelector('.var-oscillating')
+          if (u.classList.contains('active') === false) {
+            u.classList.add('active')
+                  hass.callService('fan', 'oscillate', {
+                      entity_id: entityId,
+                      oscillating: true
+                  });
+              }else{
+                u.classList.remove('active')
+                  hass.callService('fan', 'oscillate', {
+                      entity_id: entityId,
+                      oscillating: false
+                  });
+              } 
+        }
+        ui.querySelector('.var-title').onclick = () => {
+          this.log('对话框')
+          card.querySelector('.dialog').style.display = 'block'
+        }
+        this.card = card;
+        this.appendChild(card);
+      }
 
-        } 
-      }
-      ui.querySelector('.var-oscillating').onclick = () => {
-        this.log('摆头')
-        let u = ui.querySelector('.var-oscillating')
-        if (u.classList.contains('active') === false) {
-          u.classList.add('active')
-                hass.callService('fan', 'oscillate', {
-                    entity_id: entityId,
-                    oscillating: true
-                });
-            }else{
-              u.classList.remove('active')
-                hass.callService('fan', 'oscillate', {
-                    entity_id: entityId,
-                    oscillating: false
-                });
-            } 
-      }
-      ui.querySelector('.var-title').onclick = () => {
-        this.log('对话框')
-        card.querySelector('.dialog').style.display = 'block'
-      }
-      this.card = card;
-      this.appendChild(card);
+
+      //设置值更新UI
+      this.setUI(this.card.querySelector('.fan-xiaomi-panel'), {
+        title: myname || attrs['friendly_name'],
+        battery: attrs['battery'] || "--",
+        natural_speed: attrs['natural_speed'],
+        speed_level: attrs['speed_level'],
+        temperature: temperature,
+        humidity: humidity,
+        state: state.state,
+        child_lock: attrs['child_lock'],
+        oscillating: attrs['oscillating'],
+        led_brightness: attrs['led_brightness']
+      })
     }
-    //设置值更新UI
-    this.setUI(this.card.querySelector('.fan-xiaomi-panel'), {
-      title: myname || attrs['friendly_name'],
-      battery: attrs['battery'] || "--",
-      natural_speed: attrs['natural_speed'],
-      speed_level: attrs['speed_level'],
-      temperature: temperature,
-      humidity: humidity,
-      state: state.state,
-      child_lock: attrs['child_lock'],
-      oscillating: attrs['oscillating'],
-      led_brightness: attrs['led_brightness']
-    })
+
   }
 
   setConfig(config) {
@@ -174,7 +181,7 @@ class FanXiaomi extends HTMLElement {
   // The height of your card. Home Assistant uses this to automatically
   // distribute all cards over the available columns.
   getCardSize() {
-    return 1;
+    return 3;
   }
   
 /*********************************** UI设置 ************************************/
