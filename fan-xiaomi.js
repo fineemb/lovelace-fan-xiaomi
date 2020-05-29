@@ -4,179 +4,272 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2019-10-13 21:16:10
+ * @LastEditTime  : 2020-05-29 23:41:38
  */
 
+console.info("%c Xiaomi Fan Card \n%c  Version  1.2", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+
 class FanXiaomi extends HTMLElement {
+  constructor() {
+    super();
+    this.Cmd = []
+  }
+  static getConfigElement() {
+    return document.createElement("cn-map-card-editor");
+  }
+  static getStubConfig() {
+    return {name: 'Fan',
+            entity: ''}
+  }
   set hass(hass) {
-
-
-    const entityId = this.config.entity;
-    const style = this.config.style || '';
+    this._hass = hass;
+    let entityId
+    var patt = new RegExp("^fan")
+    if(this.config.entity){
+      entityId = this.config.entity;
+    }else{
+      Object.keys(hass.states).filter(a => patt.test(a) ).map(entId => {
+        if(hass.states[entId].attributes.model != undefined && hass.states[entId].attributes.model.indexOf("fan") != -1){
+          entityId = entId;
+        }
+      });
+    }
     const myname = this.config.name;
     const state = hass.states[entityId];
     const ui = this.getUI();
 
-    if(state===undefined){
-      if (!this.card) {
-        const card = document.createElement('ha-card');
-        card.className = 'fan-xiaomi';
-        card.appendChild(ui);
-        card.classList.add('offline');
-        this.card = card;
-        this.appendChild(card);
-        ui.querySelector('.var-title').textContent = this.config.name+'(离线)';
-        return;
-      }
-    }
-
-    const attrs = state.attributes;
-    const temperature = attrs['temperature'] || "--";
-    const humidity = attrs['humidity'] || "--";
-
     if (!this.card) {
-
-      const card = document.createElement('ha-card');
-      card.className = 'fan-xiaomi'
-
-      // 创建UI
-      card.appendChild(ui)
-
-      //调整风扇角度事件绑定
-      ui.querySelector('.left').onmouseover = () => {
-        ui.querySelector('.left').classList.replace('hidden','show')
-      }
-      ui.querySelector('.left').onmouseout = () => {
-        ui.querySelector('.left').classList.replace('show','hidden')
-      }
-      ui.querySelector('.left').onclick = () => {
-        this.log('左转5度')
-        if(state==="on"){
-          hass.callService('fan', 'set_direction', {
-            entity_id: entityId,
-            direction: "left"
-          });
-      }
-      }
-      ui.querySelector('.right').onmouseover = () => {
-        ui.querySelector('.right').classList.replace('hidden','show')
-      }
-      ui.querySelector('.right').onmouseout = () => {
-        ui.querySelector('.right').classList.replace('show','hidden')
-      }
-      ui.querySelector('.right').onclick = () => {
-        this.log('左转5度')
-        if(state==="on"){
-          hass.callService('fan', 'set_direction', {
-            entity_id: entityId,
-            direction: "right"
-          });
+      //初始化界面
+      this.x0 = false;
+      this.flag = true;
+      this.min = 0;
+      this.max = 100;
+      const card = document.createElement('div')
+      card.id = 'aspect-ratio'
+      card.appendChild(ui);      
+      ui.onmouseover = () => {
+        ui.querySelector('.ellipsis').classList.replace('show','hidden')
+        ui.querySelector('#buttons').classList.replace('hidden','show')
+        if(ui.querySelector('.active .left')){
+          ui.querySelector('.active .left').classList.replace('hidden','show')
+          ui.querySelector('.active .right').classList.replace('hidden','show')
         }
-        return false;
       }
-      // 定义事件
-      ui.querySelector('.c1').onclick = () => {
-        this.log('开关')
+      ui.onmouseout = () => {
+        ui.querySelector('.left').classList.replace('show','hidden')
+        ui.querySelector('.right').classList.replace('show','hidden')
+        ui.querySelector('.ellipsis').classList.replace('hidden','show')
+        ui.querySelector('#buttons').classList.replace('show','hidden')
+      }
+      card.querySelector('.ellipsis').textContent = myname;
+      ui.querySelector('#more').onclick = () => {
+        this.fire('hass-more-info', { entityId: entityId });
+      }
+      this.card = card;
+      this.appendChild(card);
+
+      //执行命令
+      ui.querySelector('.c3').onclick = () => {
         hass.callService('fan', 'toggle', {
           entity_id: entityId
         });
       }
-      ui.querySelector('.var-lock').onclick = () => {
-        this.log('童锁')
-        let u = ui.querySelector('.var-lock')
-        if (u.classList.contains('active') === false) {
-          u.classList.add('active')
-          hass.callService('fan', 'xiaomi_miio_set_child_lock_on', {
-              entity_id: entityId
-          });
-        }else{
-          u.classList.remove('active')
-            hass.callService('fan', 'xiaomi_miio_set_child_lock_off', {
-                entity_id: entityId
-            });
-        } 
+      ui.querySelector('#oscillate').onclick = () => {
+        hass.callService('fan', 'oscillate', {
+          entity_id: entityId,
+          oscillating: this.Cmd['oscillate']
+        });
       }
-      ui.querySelector('.var-natural').onclick = () => {
-        //this.log('自然')
-        let nowspeed = attrs['direct_speed'];
-        let u = ui.querySelector('.var-natural')
-        if (u.classList.contains('active') === false) {
-          nowspeed = attrs['direct_speed'];
-          u.classList.add('active')
-          u.innerHTML = '<button><span class="icon-waper"><iron-icon icon="mdi:leaf"></iron-icon></span>自然</button>'
-          hass.callService('fan', 'xiaomi_miio_set_natural_mode_on', {
-              entity_id: entityId
-          });
-          hass.callService('fan', 'SET_SPEED', {  
-            entity_id: entityId,
-            speed: nowspeed
-          });
-        }else{
-          u.classList.remove('active')
-          u.innerHTML = '<button><span class="icon-waper"><iron-icon icon="mdi:weather-windy"></iron-icon></span>直吹</button>'
-            hass.callService('fan', 'xiaomi_miio_set_natural_mode_off', {
-                entity_id: entityId
-            });
-            nowspeed = attrs['natural_speed'];
-            hass.callService('fan', 'SET_SPEED', {  
-              entity_id: entityId,
-              speed: nowspeed
-            });
+      ui.querySelector('.right').onclick = () => {
+        hass.callService('fan', 'set_direction', {
+          entity_id: entityId,
+          direction: 'right'
+        });
+      }
+      ui.querySelector('.left').onclick = () => {
+        hass.callService('fan', 'set_direction', {
+          entity_id: entityId,
+          direction: 'left'
+        });
+      }
+      ui.querySelector('#lock').addEventListener('click', () => this._setService(entityId,hass,'lock'));
+      ui.querySelector('#buzzer').addEventListener('click', () => this._setService(entityId,hass,'buzzer'));
+      ui.querySelector('#bnatural').addEventListener('click', () => this._setService(entityId,hass,'natural_speed'));
 
-        } 
-      }
-      ui.querySelector('.var-oscillating').onclick = () => {
-        this.log('摆头')
-        let u = ui.querySelector('.var-oscillating')
-        if (u.classList.contains('active') === false) {
-          u.classList.add('active')
-                hass.callService('fan', 'oscillate', {
-                    entity_id: entityId,
-                    oscillating: true
-                });
-            }else{
-              u.classList.remove('active')
-                hass.callService('fan', 'oscillate', {
-                    entity_id: entityId,
-                    oscillating: false
-                });
-            } 
-      }
-      ui.querySelector('.var-title').onclick = () => {
-        this.log('对话框')
-        card.querySelector('.dialog').style.display = 'block'
-      }
-      this.card = card;
-      this.appendChild(card);
+      this.querySelector('svg').addEventListener('mousedown', (e) => this.onMouseDown(e,this),false);
+      this.querySelector('svg').addEventListener('touchstart', (e) => this.onMouseDown(e,this),false);
+
+      this.addEventListener('mouseup', (e) => this.onMouseUp(e,this),false);
+      this.addEventListener('touchend', (e) => this.onMouseUp(e,this),false);
+
+      this.addEventListener('mousemove', (e) => this.onMouseMove(e,this),{passive: false});
+      this.addEventListener('touchmove', (e) => this.onMouseMove(e,this),{passive: false});
+
     }
-    //设置值更新UI
-    this.setUI(this.card.querySelector('.fan-xiaomi-panel'), {
-      title: myname || attrs['friendly_name'],
-      battery: attrs['battery'] || "--",
-      natural_speed: attrs['natural_speed'],
-      speed_level: attrs['speed_level'],
-      temperature: temperature,
-      humidity: humidity,
-      state: state.state,
-      child_lock: attrs['child_lock'],
-      oscillating: attrs['oscillating'],
-      led_brightness: attrs['led_brightness']
-    })
+    if(state.state==="unavailable"){
+      // 离线
+      this.card.classList.add('offline');
+      this.querySelector('svg').classList.replace('show','hidden')
+      this.card.querySelector('.ellipsis').textContent = myname+'(离线)';
+      this.card.querySelector('.fanbox').classList.remove('active');
+      this.card.querySelector('#fan').classList.remove('active');
+      this.card.querySelector('.fanbox').classList.remove('oscillat');
+    }else{
+      //在线
+      const attrs = state.attributes;
+      this.card.classList.remove('offline');
+      this.card.querySelector('.ellipsis').textContent = myname;
+      if(state.state==="on"){
+        //运行
+        this.querySelector('svg').classList.replace('hidden','show')
+        this.card.querySelector('.fanbox').classList.add('active')
+        this.card.querySelector('#fan').classList.add('active')
+        this.card.querySelector('.active .blades').style.animationDuration=(attrs.natural_speed?5-attrs.natural_speed/100*5+1:5-attrs.direct_speed/100*5+1)+'s';
+        attrs['oscillate']?this.card.querySelector('.fanbox').classList.add('oscillat'):this.card.querySelector('.fanbox').classList.remove('oscillat');
+        if(attrs['natural_speed']){
+          this.card.querySelector('#power').classList.remove('show');
+          this.card.querySelector('#direct').classList.remove('show');
+          this.card.querySelector('#natural').classList.add('show');
+        }else{
+          this.card.querySelector('#power').classList.remove('show');
+          this.card.querySelector('#direct').classList.add('show');
+          this.card.querySelector('#natural').classList.remove('show');
+        }
+      }else{
+        //关机
+        this.querySelector('svg').classList.replace('show','hidden')
+        this.card.querySelector('.fanbox').classList.remove('active');
+        this.card.querySelector('#power').classList.add('show');
+        this.card.querySelector('#direct').classList.remove('show');
+        this.card.querySelector('#natural').classList.remove('show');
+        this.card.querySelector('#fan').classList.remove('active');
+      }
+      attrs['buzzer']?this.card.querySelector('#buzzer').classList.add('active'):this.card.querySelector('#buzzer').classList.remove('active')
+      attrs['child_lock']?this.card.querySelector('#lock').classList.add('active'):this.card.querySelector('#lock').classList.remove('active')
+      attrs['natural_speed']?this.card.querySelector('#bnatural').classList.add('active'):this.card.querySelector('#bnatural').classList.remove('active')
+      attrs['oscillate']?this.card.querySelector('#oscillate').classList.add('active'):this.card.querySelector('#oscillate').classList.remove('active')
+
+      attrs['battery_charge']==='progress'?this.card.querySelector('.rightc').classList.add('battery_charge'):this.card.querySelector('.rightc').classList.remove('battery_charge');
+      attrs['battery_charge']==='progress'?this.card.querySelector('.leftc').classList.add('battery_charge'):this.card.querySelector('.leftc').classList.remove('battery_charge');
+      if(attrs['battery']){
+        let battery = attrs['battery']
+        if(battery<50){
+          this.card.querySelector('.leftcircle').style.transform = "rotate("+(battery/(100/360)-135)+"deg)";
+          this.card.querySelector('.rightcircle').style.transform = "rotate(-135deg)";
+        }else{
+          this.card.querySelector('.leftcircle').style.transform = "rotate(45deg)";
+          this.card.querySelector('.rightcircle').style.transform = "rotate("+(battery/(100/360)-180-135)+"deg)";
+        }
+      }
+    }
+    this.Cmd["lock"] = hass.states[entityId].attributes['child_lock']?"xiaomi_miio_set_child_lock_off":"xiaomi_miio_set_child_lock_on";
+    this.Cmd["oscillate"] = hass.states[entityId].attributes['oscillating']?false:true;
+    this.Cmd["buzzer"] = hass.states[entityId].attributes['buzzer']?"xiaomi_miio_set_buzzer_off":"xiaomi_miio_set_buzzer_on";
+    this.Cmd["natural_speed"] = hass.states[entityId].attributes['natural_speed']?"xiaomi_miio_set_natural_mode_off":"xiaomi_miio_set_natural_mode_on";
   }
-
+  _setService(entityId,hass,service){
+    hass.callService('fan', this.Cmd[service], {
+      entity_id: entityId
+    });
+  }
+  fire(type, detail, options) {
+  
+    options = options || {}
+    detail = detail === null || detail === undefined ? {} : detail
+    const e = new Event(type, {
+      bubbles: options.bubbles === undefined ? true : options.bubbles,
+      cancelable: Boolean(options.cancelable),
+      composed: options.composed === undefined ? true : options.composed,
+    })
+    
+    e.detail = detail
+    this.dispatchEvent(e)
+    return e
+  }
   setConfig(config) {
-    if (!config.entity) {
-      throw new Error('你需要定义一个实体');
-    }
+    // if (!config.entity) {
+    //   throw new Error('你需要定义一个实体');
+    // }
     this.config = config;
   }
-
-  // The height of your card. Home Assistant uses this to automatically
-  // distribute all cards over the available columns.
-  getCardSize() {
-    return 1;
-  }
   
+  onMouseMove ( e, that ) {
+    e.preventDefault();
+    if ( that.x0 !== false ) {
+      let value = that.getValue( e );
+      that.update( value );
+    }
+  }
+  onMouseDown (  e, that ) {
+    this.querySelector('#speed').style.strokeWidth = 20
+    that.card.getBoundingClientRect();
+    let c = that.card.getBoundingClientRect().width/2
+    that.x0 = that.card.getBoundingClientRect().right-c;
+    that.y0 = that.card.getBoundingClientRect().bottom-c;
+    let value = that.getValue( e );
+    that.update( value );
+  }
+
+  onMouseUp ( e, that ) {
+    if(that.x0){
+        that.flag = false;
+        let entity = that.config.entity;
+        that._hass.callService('fan', 'set_speed', {
+            entity_id: entity,
+            speed: that.value
+          });
+        if (that._timeoutHandlerMode) clearTimeout(that._timeoutHandlerMode);
+        that._timeoutHandlerMode = setTimeout(() => {
+            that.flag = true;
+        }, 5 * 1000);
+    }
+    that.x0 = false;
+    this.querySelector('#speed').style.strokeWidth = 0
+  }
+  update ( v ) {
+		this.computeValue( v );
+    // this.temptext.textContent = this.value;
+  }
+  computeValue ( v ) {
+		this.querySelector('#speed').style.strokeDashoffset = ( (1-v) * Math.PI*340 ).toString();
+		let value = v * ( this.max - this.min ) + this.min;
+        let step = 1, val = value, m = 0;
+        
+		//Convert to integers to avoid floating point operation issues.
+		if ( val !== parseInt( val ) || step !== parseInt( step ) ) {
+			while ( val !== parseInt( val ) || step !== parseInt( step ) ) {
+				val *= 10;
+				step *= 10;
+				m++;
+				if ( m > 5 ) {//Not much sense to go further of even 2 actually.. ?
+					val = parseInt( val );
+					step = parseInt( step );
+				}
+			}
+        }
+        
+		value = ( val - val % step ) / Math.pow( 10, m );
+		this.value = value;
+  }
+  setValue ( v ) {
+    if(this.flag){
+        v = ( v - this.min ) / ( this.max - this.min );
+        this.update( v );
+    }
+  };
+  getValue ( e ) {
+		var x, y, result, a;
+		x = !! e.touches ? e.touches[ 0 ].clientX : e.clientX;
+		y = !! e.touches ? e.touches[ 0 ].clientY : e.clientY;
+		x = x - this.x0;
+		y = - y + this.y0;
+		a = Math.atan( y / x ) + Math.PI / 2;
+		result = x < 0 ? Math.PI + a : a;
+		result /= 2 * Math.PI;
+		result = 1 - result;
+		return result;
+	}
+
 /*********************************** UI设置 ************************************/
 getUI() {
 
@@ -194,12 +287,54 @@ getUI() {
   for(var i=1;i<73;i+=2){
     fan1s+=`<div class="fan1 ang`+i+`"></div>`
   }
-  let fanbox = document.createElement('div')
-  fanbox.className = 'fan-xiaomi-panel'
+  let fanbox = document.createElement('ha-card')
+  fanbox.id = 'fan'
   fanbox.innerHTML = `
 <style>
-.fan-xiaomi{position:relative;overflow:hidden;width:100%;height:335px}
-.offline{opacity:0.3}
+#aspect-ratio {
+  position: relative;
+}
+#aspect-ratio::before {
+  content: "";
+  display: block;
+  padding-bottom: 100%;
+}
+#aspect-ratio>:first-child {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+}
+#container{
+  height: 100%;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+}
+.c_icon {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  right: 0;
+  z-index: 25;
+}
+.c_icon.active{
+  color:var(--paper-item-icon-active-color);
+}
+.buttons{
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  justify-content:center;
+  width: 80%;
+  margin: 0 10%;
+  background: var(--paper-card-background-color);
+}
+.buttons>*{
+  position: relative;
+}
+.offline{opacity:0.5}
 .icon{overflow:hidden;width:2em;height:2em;vertical-align:-.15em;fill:gray}
 .fan-xiaomi-panel{position:absolute;top:0;width:100%;text-align:center}
 p{margin:0;padding:0}
@@ -217,7 +352,7 @@ p{margin:0;padding:0}
 .op-row .op .icon-waper{display:block;margin-bottom:5px;width:30px;height:30px}
 .op-row .op.active button{color:#01be9e!important;text-shadow:0 0 10px #01be9e}
 `+csss+`
-.fanbox{position:relative;margin:10px auto;width:150px;height:150px;border-radius:50%;background:#80808061}
+.fanbox{position:relative;margin:13%;width: 74%; height: 74%;border-radius:50%;background:#80808061}
 .fanbox.active.oscillat{animation:oscillate 8s infinite linear}
 .blades div{position:absolute;margin:15% 0 0 15%;width:35%;height:35%;border-radius:100% 50% 0;background:#989898;transform-origin:100% 100%}
 .blades{width:100%;height:100%}
@@ -227,97 +362,191 @@ p{margin:0;padding:0}
 .fan1{top:20%;transform-origin:0 150%}
 .c1{top:20%;left:20%;width:60%;height:60%;border:2px solid #fff;border-radius:50%;cursor:pointer;baskground:#ffffff00}
 .c1,.c2{position:absolute;box-sizing:border-box}
-.c2{top:0;left:0;width:100%;height:100%;border:10px solid #f7f7f7;border-radius:50%}
+.c2{top:-1%;left:-1%;width:102%;height:102%;border:10px solid #f7f7f7;border-radius:50%;background: #ffffff01;}
 .c3{position:absolute;top:40%;left:40%;box-sizing:border-box;width:20%;height:20%;border-radius:50%;background:#fff;color:#ddd}
 .c3.active{border:2px solid #8dd5c3}
-.c3 span iron-icon{width:100%;height:100%}
-.chevron{position:absolute;top:0;height:100%;opacity:0}
-.show{opacity:1}
-.hidden{opacity:0}
-.chevron.left{left:-30px}
-.chevron.right{right:-30px}
-.chevron span,.chevron span iron-icon{width:30px;height:100%}
+.c3 ha-icon{
+  width: 80%;
+  height: 80%;
+  outline: none;
+  --mdc-icon-size: 100%;
+  top: 10%;
+  right: 10%;
+}
+
+svg {
+  position:absolute;
+  top: 0;
+}
+.c1 .wrapper{
+  width: calc(50% + 2px);
+  height: calc(100% + 4px);
+  position: absolute;
+  top:-2px;
+  overflow: hidden;
+}
+.c1 .rightc{
+  right:-2px;
+}
+.c1 .leftc{
+  left:-2px;
+}
+.c1 .circle{
+  width: 200%;
+  height: 100%;
+  box-sizing:border-box;
+  border:2px solid transparent;
+  border-radius: 50%;
+  position: absolute;
+  top:0;
+  transform : rotate(-135deg);
+}
+.c1 .rightcircle{
+  border-top:2px solid #63ff69;
+  border-right:2px solid #63ff69;
+  right:0;
+
+}
+.c1 .leftcircle{
+  border-bottom:2px solid #63ff69;
+  border-left:2px solid #63ff69;
+  left:0;
+
+}
+.c1 .battery_charge{
+  -webkit-animation: battery_charge 2s linear infinite;
+}
+.name {
+  width: 100%;
+  position: absolute;
+  bottom: 0px;
+  margin-bottom: 5px;
+  text-align: center;
+  opacity: 0.5;
+}
+.chevron{position: absolute;
+  top: calc(50% - 20px);
+  height: 40px;
+  width: 40px;
+  background: var(--paper-card-background-color);
+  color: var(--header-color);
+  z-index:100;
+}
+.speed{position: absolute;
+  left: calc(50% - 20px);
+  height: 40px;
+  width: 40px;
+  background: var(--paper-card-background-color);
+  color: var(--header-color);
+  z-index:100;
+}
+.show{display: block;}
+.hidden{display: none;}
+#buttons.show{display: flex;}
+#buttons ha-icon-button {
+  --mdc-icon-button-size: 32px;
+}
+.chevron.left{left: 0;border-radius:20px;--mdc-icon-button-size: 40px;}
+.chevron.right{right: 0;border-radius:20px;--mdc-icon-button-size: 40px;}
+
+.speed.top{top: 0;border-radius:20px;}
+.speed.bottom{bottom: 0;border-radius:20px;}
+
+.state{
+  display: none;
+}
+.state.show{
+  display: block;
+}
+@-webkit-keyframes circle_right{
+  0%{
+      -webkit-transform: rotate(-135deg);
+  }
+  50%,100%{
+      -webkit-transform: rotate(45deg);
+  }
+}
+@-webkit-keyframes circle_left{
+  0%,50%{
+      -webkit-transform: rotate(-135deg);
+  }
+  100%{
+      -webkit-transform: rotate(45deg);
+  }
+}
+
+@-webkit-keyframes battery_charge{
+  50%{
+    opacity:1;
+}
+  0%,100%{
+    opacity:0;
+}
+}
 
 @keyframes blades{0%{transform:translate(0,0) rotate(0)}
 to{transform:translate(0,0) rotate(3600deg)}
 }
 @keyframes oscillate{0%{transform:perspective(10em) rotateY(0)}
-20%{transform:perspective(10em) rotateY(40deg)}
-40%{transform:perspective(10em) rotateY(0)}
-60%{transform:perspective(10em) rotateY(-40deg)}
-80%{transform:perspective(10em) rotateY(0)}
-to{transform:perspective(10em) rotateY(40deg)}
+25%{transform:perspective(10em) rotateY(40deg)}
+50%{transform:perspective(10em) rotateY(0)}
+75%{transform:perspective(10em) rotateY(-40deg)}
+100%{transform:perspective(10em) rotateY(0)}
 }
 
 
 </style>
-<div class="title">
-<p class="var-title">儿童房</p>
-</div>
-<div class="fanbox">
-  <div class="blades ">
-    <div class="b1 ang1"></div>
-    <div class="b2 ang25"></div>
-    <div class="b3 ang49"></div>
-  </div>
-  `+fans+fan1s+`
-  <div class="c2"></div>
-  <div class="c3">
-    <span class="icon-waper">
-       <iron-icon icon="mdi:power"></iron-icon>
-    </span>
-  </div>
-  <div class="c1"></div>
-  <div class="chevron left hidden">
-    <span class="icon-waper">
-    <iron-icon icon="mdi:chevron-left"></iron-icon>
-  </div>
-  <div class="chevron right hidden">
-    <span class="icon-waper">
-    <iron-icon icon="mdi:chevron-right"></iron-icon>
-  </div>
-</span>
-</div>
-</div>
-<div class="attr-row">
-<div class="attr">
-  <p class="attr-title">电量(%)</p>
-  <p class="attr-value var-battery">0</p>
-</div>
-<div class="attr">
-  <p class="attr-title">温度(&#8451;)</p>
-  <p class="attr-value var-temperature">30</p>
-</div>
-<div class="attr">
-  <p class="attr-title">湿度(%)</p>
-  <p class="attr-value var-humidity">30</p>
-</div>
-</div>
-<div class="op-row">
-<div class="op var-lock">
-    <button>
-    <span class="icon-waper">
-      <iron-icon icon="mdi:lock"></iron-icon>
-    </span>
-      童锁
-    </button>
-</div>
-<div class="op var-oscillating">
-    <button>
-      <span class="icon-waper">
-        <iron-icon icon="mdi:fast-forward-30"></iron-icon>
-      </span>
-      摆头
-    </button>
-</div>
-<div class="op var-natural">
-    <button>
-      <span class="icon-waper">
-        <iron-icon icon="mdi:leaf"></iron-icon>
-      </span>
-      自然
-    </button>
-</div>
+    <div id="container">
+      <div class="fanbox">
+        <div class="blades ">
+          <div class="b1 ang1"></div>
+          <div class="b2 ang25"></div>
+          <div class="b3 ang49"></div>
+        </div>
+        `+fans+fan1s+`
+         <div class="c2"></div>
+        <div class="c3">
+            <ha-icon id="power" icon="mdi:power" class="c_icon state show" role="button" tabindex="0" aria-disabled="false"></ha-icon>
+            <ha-icon id="direct" icon="mdi:weather-windy" class="c_icon state" role="button" tabindex="0" aria-disabled="false"></ha-icon>
+            <ha-icon id="natural" icon="mdi:leaf" class="c_icon state" role="button" tabindex="0" aria-disabled="false"></ha-icon>
+        </div>
+        <div class="c1">
+          <div class="wrapper rightc">
+            <div class="circle rightcircle"></div>
+          </div>
+          <div class="wrapper leftc">
+            <div class="circle leftcircle"></div>
+          </div>
+        </div>
+        <svg class="hidden" width="100%" height="100%" viewBox="0 0 400 400"><circle id="speed" cx="200" cy="200" r="170" fill="none" class="grab" style="stroke: var(--paper-item-icon-active-color); fill: none; stroke-width: 0; stroke-dasharray: 1068.14; transform: rotate(90deg); transform-origin: 50% 50%; stroke-dashoffset: 44.329;"></circle></svg>
+      </div>
+    </div>
+    <div class="chevron left hidden">
+      <ha-icon-button icon="mdi:chevron-left" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
+    </div>
+    <div class="chevron right hidden">
+      <ha-icon-button icon="mdi:chevron-right" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
+    </div>
+    <div class="speed top hidden">
+      <ha-icon-button icon="mdi:chevron-double-up" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
+    </div>
+    <div class="speed bottom hidden">
+      <ha-icon-button icon="mdi:chevron-down" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
+    </div>
+    <div class="prop">
+      <ha-icon-button id="more" icon="mdi:dots-vertical" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
+    </div>
+    <div id="buttons" class="buttons hidden">
+      <ha-icon-button id="lock" icon="hass:lock" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
+      <ha-icon-button id="oscillate" icon="mdi:swap-horizontal-circle-outline" class="c_icon " role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
+      <ha-icon-button id="bnatural" icon="mdi:leaf" class="c_icon " role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
+      <ha-icon-button id="buzzer" icon="mdi:surround-sound" class="c_icon " role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
+    </div>
+    <div class="header" style="font-size: 9px;">   
+        <div class="name">
+          <span class="ellipsis show" style="">衣帽间</span>
+        </div>
+    </div>
 </div>
 `
   return fanbox
@@ -399,3 +628,11 @@ log() {
 }
 
 customElements.define('fan-xiaomi', FanXiaomi);
+
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type: "fan-xiaomi",
+  name: "电风扇",
+  preview: true, // Optional - defaults to false
+  description: "小米电风扇卡片" // Optional
+});
