@@ -8,10 +8,6 @@
  -->
 # 小米电风扇卡片
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
-<<<<<<< HEAD
-=======
-
->>>>>>> 2f2e55e41eb23fd1d106be7c7065ba145a3a6638
 +  这个卡片插件基于CSS实现,是用于HASS, 支持[HACS](https://github.com/custom-components/hacs)安装
 +  支持对小米风扇的各种操作
 +  独特的动画效果
