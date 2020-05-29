@@ -1,7 +1,4 @@
 {
     "name": "小米电风扇",
-    "country": "NO",
-    "domains": ["fan"],
-    "render_readme": true,
-    "filename": "fan-xiaomi.js"
+    "render_readme": true
   }
