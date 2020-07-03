@@ -4,7 +4,7 @@
  * @Description   : 
  * @Date          : 2019-10-13 17:46:58
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-05-29 23:58:15
+ * @LastEditTime  : 2020-05-30 00:01:47
  -->
 # 小米电风扇卡片
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
