@@ -4,7 +4,7 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-07-28 09:08:04
+ * @LastEditTime  : 2020-07-28 19:04:51
  */
 
 console.info("%c Xiaomi Fan Card \n%c  Version  1.2", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
@@ -58,7 +58,7 @@ class FanXiaomi extends HTMLElement {
         ui.querySelector('.ellipsis').classList.replace('show','hidden')
         ui.querySelector('#buttons').classList.replace('hidden','show')
         
-        if(ui.querySelector('.active')){
+        if(ui.querySelector('.active .left')){
           ui.querySelector('svg').classList.replace('hidden','show')
           ui.querySelector('.active .left').classList.replace('hidden','show')
           ui.querySelector('.active .right').classList.replace('hidden','show')
@@ -76,7 +76,7 @@ class FanXiaomi extends HTMLElement {
         ui.querySelector('.ellipsis').classList.replace('show','hidden')
         ui.querySelector('#buttons').classList.replace('hidden','show')
         
-        if(ui.querySelector('.active')){
+        if(ui.querySelector('.active .left')){
           ui.querySelector('svg').classList.replace('hidden','show')
           ui.querySelector('.active .left').classList.replace('hidden','show')
           ui.querySelector('.active .right').classList.replace('hidden','show')
@@ -173,6 +173,7 @@ class FanXiaomi extends HTMLElement {
       if(state.state==="on"){
         //运行
         // this.querySelector('svg').classList.replace('hidden','show')
+        attrs['natural_speed']?this.querySelector('#speed').style.strokeDashoffset = ( (1-attrs['natural_speed']/100) * Math.PI*340 ).toString():this.querySelector('#speed').style.strokeDashoffset = ( (1-attrs['direct_speed']/100) * Math.PI*340 ).toString();
         this.card.querySelector('.fanbox').classList.add('active')
         this.card.querySelector('#fan').classList.add('active')
         this.card.querySelector('.active .blades').style.animationDuration=(attrs.natural_speed?5-attrs.natural_speed/100*5+1:5-attrs.direct_speed/100*5+1)+'s';
@@ -627,75 +628,6 @@ to{transform:translate(0,0) rotate(3600deg)}
 `
   return fanbox
 }
-
-// 设置UI值
-setUI(fanboxa, { title, battery,
-     natural_speed,temperature,humidity,
-      state,child_lock,oscillating,led_brightness
-      //buzzer,angle,speed_level,led_brightness 
-    }) {
-
-fanboxa.querySelector('.var-title').textContent = title
-fanboxa.querySelector('.var-battery').textContent = battery
-fanboxa.querySelector('.var-temperature').textContent = temperature
-fanboxa.querySelector('.var-humidity').textContent = humidity
-  //LED
-  let activeElement = fanboxa.querySelector('.c3')
-  if (led_brightness < 2) {
-    if (activeElement.classList.contains('active') === false) {
-      activeElement.classList.add('active')
-    }
-  } else {
-    activeElement.classList.remove('active')
-    // div.querySelector('.bg-on').removeChild(div.querySelector('.container'))
-  }
-  //状态
-    activeElement = fanboxa.querySelector('.fanbox')
-  if (state === 'on') {
-    if (activeElement.classList.contains('active') === false) {
-      activeElement.classList.add('active')
-    }
-  } else {
-    activeElement.classList.remove('active')
-    // div.querySelector('.bg-on').removeChild(div.querySelector('.container'))
-  }
-  // 童锁
-  activeElement = fanboxa.querySelector('.var-lock')
-  if (child_lock) {
-    if (activeElement.classList.contains('active') === false) {
-      activeElement.classList.add('active')
-    }
-  } else {
-    activeElement.classList.remove('active')
-  }
-  // 自然
-  activeElement = fanboxa.querySelector('.var-natural')
-  if (natural_speed) {
-    if (activeElement.classList.contains('active') === false) {
-      activeElement.classList.add('active')
-      activeElement.innerHTML = '<button><span class="icon-waper"><iron-icon icon="mdi:leaf"></iron-icon></span>自然</button>'
-    }
-  } else {
-    activeElement.classList.remove('active')
-    activeElement.innerHTML = '<button><span class="icon-waper"><iron-icon icon="mdi:weather-windy"></iron-icon></span>直吹</button>'
-  }
-  // 摆动
-  activeElement = fanboxa.querySelector('.var-oscillating')
-  let fb = fanboxa.querySelector('.fanbox')
-  if (oscillating) {
-    
-    if (fb.classList.contains('oscillat') === false) {
-        fb.classList.add('oscillat')
-      }
-    if (activeElement.classList.contains('active') === false) {
-      // activeElement.classList.add('active')
-    }
-  } else {
-    activeElement.classList.remove('active')
-    fb.classList.remove('oscillat')
-  }
-}
-/*********************************** UI设置 ************************************/
 
 // 加入日志开关
 log() {
