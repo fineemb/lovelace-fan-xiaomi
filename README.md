@@ -4,40 +4,46 @@
  * @Description   : 
  * @Date          : 2019-10-13 17:46:58
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-05-30 00:01:47
+ * @LastEditTime  : 2020-07-28 23:43:12
  -->
-# 小米电风扇卡片
+# Xiaomi Fan Card
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
-+  这个卡片插件基于CSS实现,是用于HASS, 支持[HACS](https://github.com/custom-components/hacs)安装
-+  支持对小米风扇的各种操作
-+  独特的动画效果
-## 请你欣赏
-![](0529.gif)
-## 更新
++  This card plug-in is based on CSS implementation and is used for HASS, Supports [HACS](https://github.com/custom-components/hacs) installation
++  Supports various operations on Xiaomi fans.
++  Unique animation effects.
+## Preview
+![](02.gif)
+## Update
+### v1.2.1
+ - Fix the problem of speed information out of sync.
+ - Add sway angle interaction.
+ - Support for Lovelace UI configuration.
 ### v1.2
- - 删除温湿度信息
- - 重构布局
- - 增加电池电量环形显示(如果设备支持)
- - 增加调速
- - 增加角度调整按钮
+ - Delete the temperature and humidity information.
+ - Refactor the layout.
+ - Increase battery power ring display (if device supports)
+ - Increase the speed of the regulation.
+ - Increase the angle adjustment button.
  
-## HACS安装
-在商店里搜索Lovelace-fan-xiaomi
-## 手动安装
-下载fan-xiaomi.js 复制到你的www\community\lovelace-fan-xiaomi\fan-xiaomi.js
-然后添加一下资源
-``` yaml
-resources:
-  - url: /community_plugin/lovelace-fan-xiaomi/fan-xiaomi.js?v=0.2
-    type: js
-```
-``` yaml
-      - type: 'custom:fan-xiaomi'
-        name: 测试
-        entity: fan.zhi_neng_dian_feng_shan_1
-```
+## HACS Installation
+Search for Lovelace-fan-xiaomi
+## Manual Installation
+1.  Download fan-xiaomi.js 
+1. Copy to www\community\lovelace-fan-xiaomi\fan-xiaomi.js
+1.  Add the following to your Lovelace resources
+    ``` yaml
+    resources:
+      - url: /hacsfiles/lovelace-fan-xiaomi/fan-xiaomi.js?v=0.2
+        type: module
+    ```
+1.  Add the following to your Lovelace config views.cards key
+    ``` yaml
+          - type: 'custom:fan-xiaomi'
+            name: fan
+            entity: fan.zhi_neng_dian_feng_shan_1
+    ```
 
-## 感谢
+## Credits
 [shaonianzhentan](https://github.com/shaonianzhentan/) 
 
 [花神](https://github.com/yaming116)
