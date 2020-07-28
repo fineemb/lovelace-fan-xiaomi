@@ -4,7 +4,7 @@
  * @Description   : 
  * @Date          : 2019-10-13 17:46:58
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-07-28 23:43:12
+ * @LastEditTime  : 2020-07-28 23:46:48
  -->
 # Xiaomi Fan Card
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
@@ -38,9 +38,9 @@ Search for Lovelace-fan-xiaomi
     ```
 1.  Add the following to your Lovelace config views.cards key
     ``` yaml
-          - type: 'custom:fan-xiaomi'
-            name: fan
-            entity: fan.zhi_neng_dian_feng_shan_1
+    type: 'custom:fan-xiaomi'
+    name: Fan
+    entity: fan.zhi_neng_dian_feng_shan_3
     ```
 
 ## Credits
