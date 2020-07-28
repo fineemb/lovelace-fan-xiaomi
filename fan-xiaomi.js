@@ -4,10 +4,10 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-07-28 19:04:51
+ * @LastEditTime  : 2020-07-28 19:10:09
  */
 
-console.info("%c Xiaomi Fan Card \n%c  Version  1.2", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+console.info("%c Xiaomi Fan Card \n%c  Version  1.2.1 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
 
 const LitElement = Object.getPrototypeOf(
   customElements.get("ha-panel-lovelace")
