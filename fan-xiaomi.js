@@ -4,10 +4,16 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-05-29 23:41:38
+ * @LastEditTime  : 2020-07-28 09:08:04
  */
 
 console.info("%c Xiaomi Fan Card \n%c  Version  1.2", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+
+const LitElement = Object.getPrototypeOf(
+  customElements.get("ha-panel-lovelace")
+);
+const html = LitElement.prototype.html;
+const css = LitElement.prototype.css;
 
 class FanXiaomi extends HTMLElement {
   constructor() {
@@ -15,7 +21,7 @@ class FanXiaomi extends HTMLElement {
     this.Cmd = []
   }
   static getConfigElement() {
-    return document.createElement("cn-map-card-editor");
+    return document.createElement("fan-xiaomi-card-editor");
   }
   static getStubConfig() {
     return {name: 'Fan',
@@ -37,6 +43,7 @@ class FanXiaomi extends HTMLElement {
     const myname = this.config.name;
     const state = hass.states[entityId];
     const ui = this.getUI();
+    this.old_angle = state.attributes['angle'];
 
     if (!this.card) {
       //初始化界面
@@ -50,7 +57,9 @@ class FanXiaomi extends HTMLElement {
       ui.onmouseover = () => {
         ui.querySelector('.ellipsis').classList.replace('show','hidden')
         ui.querySelector('#buttons').classList.replace('hidden','show')
-        if(ui.querySelector('.active .left')){
+        
+        if(ui.querySelector('.active')){
+          ui.querySelector('svg').classList.replace('hidden','show')
           ui.querySelector('.active .left').classList.replace('hidden','show')
           ui.querySelector('.active .right').classList.replace('hidden','show')
         }
@@ -60,14 +69,37 @@ class FanXiaomi extends HTMLElement {
         ui.querySelector('.right').classList.replace('show','hidden')
         ui.querySelector('.ellipsis').classList.replace('hidden','show')
         ui.querySelector('#buttons').classList.replace('show','hidden')
+        ui.querySelector('svg').classList.replace('show','hidden')
       }
+      ui.ontouchstart = () => {
+        clearTimeout(this.tid)
+        ui.querySelector('.ellipsis').classList.replace('show','hidden')
+        ui.querySelector('#buttons').classList.replace('hidden','show')
+        
+        if(ui.querySelector('.active')){
+          ui.querySelector('svg').classList.replace('hidden','show')
+          ui.querySelector('.active .left').classList.replace('hidden','show')
+          ui.querySelector('.active .right').classList.replace('hidden','show')
+        }
+      }
+
+      ui.ontouchend = () => {
+        this.tid = setTimeout(function() { 
+          ui.querySelector('.left').classList.replace('show','hidden')
+          ui.querySelector('.right').classList.replace('show','hidden')
+          ui.querySelector('.ellipsis').classList.replace('hidden','show')
+          ui.querySelector('#buttons').classList.replace('show','hidden')
+          ui.querySelector('svg').classList.replace('show','hidden')
+         }, 5000);
+      }
+
       card.querySelector('.ellipsis').textContent = myname;
       ui.querySelector('#more').onclick = () => {
         this.fire('hass-more-info', { entityId: entityId });
       }
       this.card = card;
       this.appendChild(card);
-
+      
       //执行命令
       ui.querySelector('.c3').onclick = () => {
         hass.callService('fan', 'toggle', {
@@ -75,10 +107,29 @@ class FanXiaomi extends HTMLElement {
         });
       }
       ui.querySelector('#oscillate').onclick = () => {
-        hass.callService('fan', 'oscillate', {
-          entity_id: entityId,
-          oscillating: this.Cmd['oscillate']
-        });
+        let new_angle = this.old_angle+30>120?0:this.old_angle+30;
+        this.old_angle = new_angle;
+        if(new_angle){
+          hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
+            entity_id: entityId,
+            angle: new_angle
+          });
+        }else{
+          if(this.Cmd["oscillate"]){
+            hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
+              entity_id: entityId,
+              angle: 30
+            });
+            new_angle = 30;
+          }else{
+            hass.callService('fan', 'oscillate', {
+              entity_id: entityId,
+              oscillating: this.Cmd['oscillate']
+            });
+            new_angle = 0;
+          }
+        }
+        this.card.querySelector('#angle').textContent = "^_^" 
       }
       ui.querySelector('.right').onclick = () => {
         hass.callService('fan', 'set_direction', {
@@ -121,7 +172,7 @@ class FanXiaomi extends HTMLElement {
       this.card.querySelector('.ellipsis').textContent = myname;
       if(state.state==="on"){
         //运行
-        this.querySelector('svg').classList.replace('hidden','show')
+        // this.querySelector('svg').classList.replace('hidden','show')
         this.card.querySelector('.fanbox').classList.add('active')
         this.card.querySelector('#fan').classList.add('active')
         this.card.querySelector('.active .blades').style.animationDuration=(attrs.natural_speed?5-attrs.natural_speed/100*5+1:5-attrs.direct_speed/100*5+1)+'s';
@@ -144,10 +195,12 @@ class FanXiaomi extends HTMLElement {
         this.card.querySelector('#natural').classList.remove('show');
         this.card.querySelector('#fan').classList.remove('active');
       }
-      attrs['buzzer']?this.card.querySelector('#buzzer').classList.add('active'):this.card.querySelector('#buzzer').classList.remove('active')
-      attrs['child_lock']?this.card.querySelector('#lock').classList.add('active'):this.card.querySelector('#lock').classList.remove('active')
-      attrs['natural_speed']?this.card.querySelector('#bnatural').classList.add('active'):this.card.querySelector('#bnatural').classList.remove('active')
-      attrs['oscillate']?this.card.querySelector('#oscillate').classList.add('active'):this.card.querySelector('#oscillate').classList.remove('active')
+      this.card.querySelector('#angle').textContent = attrs['angle'] ;
+      attrs['buzzer']?this.card.querySelector('#buzzer').classList.add('active'):this.card.querySelector('#buzzer').classList.remove('active');
+      attrs['child_lock']?this.card.querySelector('#lock').classList.add('active'):this.card.querySelector('#lock').classList.remove('active');
+      attrs['natural_speed']?this.card.querySelector('#bnatural').classList.add('active'):this.card.querySelector('#bnatural').classList.remove('active');
+      attrs['oscillate']?this.card.querySelector('#oscillate').classList.add('active'):this.card.querySelector('#oscillate').classList.remove('active');
+      attrs['oscillate']?this.card.querySelector('#angle').textContent = attrs['angle']:this.card.querySelector('#angle').textContent = 0 ;
 
       attrs['battery_charge']==='progress'?this.card.querySelector('.rightc').classList.add('battery_charge'):this.card.querySelector('.rightc').classList.remove('battery_charge');
       attrs['battery_charge']==='progress'?this.card.querySelector('.leftc').classList.add('battery_charge'):this.card.querySelector('.leftc').classList.remove('battery_charge');
@@ -201,7 +254,7 @@ class FanXiaomi extends HTMLElement {
     }
   }
   onMouseDown (  e, that ) {
-    this.querySelector('#speed').style.strokeWidth = 20
+    // this.querySelector('#speed').style.strokeWidth = 10
     that.card.getBoundingClientRect();
     let c = that.card.getBoundingClientRect().width/2
     that.x0 = that.card.getBoundingClientRect().right-c;
@@ -224,7 +277,7 @@ class FanXiaomi extends HTMLElement {
         }, 5 * 1000);
     }
     that.x0 = false;
-    this.querySelector('#speed').style.strokeWidth = 0
+    // this.querySelector('#speed').style.strokeWidth = 10
   }
   update ( v ) {
 		this.computeValue( v );
@@ -318,9 +371,17 @@ getUI() {
   top: 0;
   right: 0;
   z-index: 25;
+  
 }
 .c_icon.active{
   color:var(--paper-item-icon-active-color);
+  fill:var(--paper-item-icon-active-color);
+}
+.c_icon #oc{
+  stroke:var(--primary-text-color)
+}
+.c_icon.active #oc{
+  stroke:var(--paper-item-icon-active-color);
 }
 .buttons{
   position: absolute;
@@ -329,7 +390,7 @@ getUI() {
   justify-content:center;
   width: 80%;
   margin: 0 10%;
-  background: var(--paper-card-background-color);
+  background: var(--card-background-color);
 }
 .buttons>*{
   position: relative;
@@ -374,7 +435,7 @@ p{margin:0;padding:0}
   right: 10%;
 }
 
-svg {
+#speedsvg {
   position:absolute;
   top: 0;
 }
@@ -443,8 +504,15 @@ svg {
 .show{display: block;}
 .hidden{display: none;}
 #buttons.show{display: flex;}
-#buttons ha-icon-button {
+#buttons ha-icon-button ,#buttons mwc-icon-button{
   --mdc-icon-button-size: 32px;
+}
+#buttons tspan{
+  text-anchor: middle;
+  font-family: Helvetica, sans-serif;
+  alignment-baseline: central;
+  dominant-baseline: central;
+  font-size: 10px;
 }
 .chevron.left{left: 0;border-radius:20px;--mdc-icon-button-size: 40px;}
 .chevron.right{right: 0;border-radius:20px;--mdc-icon-button-size: 40px;}
@@ -518,7 +586,7 @@ to{transform:translate(0,0) rotate(3600deg)}
             <div class="circle leftcircle"></div>
           </div>
         </div>
-        <svg class="hidden" width="100%" height="100%" viewBox="0 0 400 400"><circle id="speed" cx="200" cy="200" r="170" fill="none" class="grab" style="stroke: var(--paper-item-icon-active-color); fill: none; stroke-width: 0; stroke-dasharray: 1068.14; transform: rotate(90deg); transform-origin: 50% 50%; stroke-dashoffset: 44.329;"></circle></svg>
+        <svg id="speedsvg" class="hidden" width="100%" height="100%" viewBox="0 0 400 400"><circle id="speed" cx="200" cy="200" r="170" fill="none" class="grab" style="stroke: var(--paper-item-icon-active-color); fill: none; stroke-width: 8; stroke-dasharray: 1068.14; transform: rotate(90deg); transform-origin: 50% 50%; stroke-dashoffset: 44.329;"></circle></svg>
       </div>
     </div>
     <div class="chevron left hidden">
@@ -538,7 +606,15 @@ to{transform:translate(0,0) rotate(3600deg)}
     </div>
     <div id="buttons" class="buttons hidden">
       <ha-icon-button id="lock" icon="hass:lock" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
-      <ha-icon-button id="oscillate" icon="mdi:swap-horizontal-circle-outline" class="c_icon " role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
+      <mwc-icon-button id="oscillate" class="c_icon ">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+          <path d="M4,6l1,-6l5,6.5z"></path>
+          <path id="oc" d="M3,7A 10 10, 0, 1, 0, 5.5 4," fill="none" style="stroke-width: 2"></path>
+          <text  x="12" y="12">
+            <tspan id="angle">120</tspan>
+          </text>
+        </svg>
+      </mwc-icon-button>
       <ha-icon-button id="bnatural" icon="mdi:leaf" class="c_icon " role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
       <ha-icon-button id="buzzer" icon="mdi:surround-sound" class="c_icon " role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
     </div>
@@ -629,6 +705,81 @@ log() {
 
 customElements.define('fan-xiaomi', FanXiaomi);
 
+export class FanXiaomiCardEditor extends LitElement {
+  setConfig(config) {
+      this.config = config;
+  }
+
+  static get properties() {
+      return {
+          hass: {},
+          config: {}
+      };
+  }
+  render() {
+    var fanRE = new RegExp("fan\.")
+    return html`
+    <div class="card-config">
+      <paper-input
+          label="${this.hass.localize("ui.panel.lovelace.editor.card.generic.title")} (${this.hass.localize("ui.panel.lovelace.editor.card.config.optional")})"
+          .value="${this.config.name}"
+          .configValue="${"title"}"
+          @value-changed="${this._titleChanged}"
+      ></paper-input>
+      <paper-input-container >
+          <label slot="label">${this.hass.localize("ui.panel.lovelace.editor.card.entities.name")}</label>
+          <input type="text" value="${this.config.entity}" slot="input" list="entitieslist" autocapitalize="none" @change=${this._addEntity} @focus=${this._focusEntity}>
+      </paper-input-container>
+    </div>
+    <datalist id="entitieslist">
+        ${Object.keys(this.hass.states).filter(a => fanRE.test(a) ).map(entId => html`
+            <option value=${entId}>${this.hass.states[entId].attributes.friendly_name || entId}</option>
+        `)}
+    </datalist>
+    `
+  }
+  _focusEntity(e){
+    // const target = e.target;
+    e.target.value = ''
+  }
+
+  _titleChanged(e){
+    const target = e.target;
+
+    if (!this.config || !this.hass || !target ) {
+        return;
+    }
+    
+    if(target.configValue == "title"){
+        this.config = {
+            ...this.config,
+            "name": target.value
+        };
+    }
+    this.configChanged(this.config)
+  }
+  _addEntity(ev){
+    const target = ev.target.value;
+    if (!this.config || !this.hass || !this.hass.states[target]) {
+      return;
+    }
+    this.config = {
+        ...this.config,
+        "entity": target
+    };
+    this.configChanged(this.config)
+
+  }
+  configChanged(newConfig) {
+    const event = new Event("config-changed", {
+      bubbles: true,
+      composed: true
+    });
+    event.detail = {config: newConfig};
+    this.dispatchEvent(event);
+  }
+}
+customElements.define("fan-xiaomi-card-editor", FanXiaomiCardEditor);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "fan-xiaomi",
