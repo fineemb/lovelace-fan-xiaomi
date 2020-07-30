@@ -4,10 +4,10 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-07-28 19:10:09
+ * @LastEditTime  : 2020-07-30 15:58:52
  */
 
-console.info("%c Xiaomi Fan Card \n%c  Version  1.2.1 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+console.info("%c Xiaomi Fan Card \n%c  Version  1.2.2 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
 
 const LitElement = Object.getPrototypeOf(
   customElements.get("ha-panel-lovelace")
@@ -25,7 +25,9 @@ class FanXiaomi extends HTMLElement {
   }
   static getStubConfig() {
     return {name: 'Fan',
-            entity: ''}
+            entity: '',
+            aspect_ratio: '1',
+            background_color:''}
   }
   set hass(hass) {
     this._hass = hass;
@@ -114,6 +116,8 @@ class FanXiaomi extends HTMLElement {
             entity_id: entityId,
             angle: new_angle
           });
+          this.card.querySelector('.fanbox').classList.remove('oscillat','oscillat30','oscillat60','oscillat90','oscillat120');
+          this.card.querySelector('.fanbox').classList.add('oscillat'+new_angle)
         }else{
           if(this.Cmd["oscillate"]){
             hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
@@ -121,6 +125,8 @@ class FanXiaomi extends HTMLElement {
               angle: 30
             });
             new_angle = 30;
+            this.card.querySelector('.fanbox').classList.remove('oscillat','oscillat30','oscillat60','oscillat90','oscillat120');
+            this.card.querySelector('.fanbox').classList.add('oscillat30')
           }else{
             hass.callService('fan', 'oscillate', {
               entity_id: entityId,
@@ -147,14 +153,14 @@ class FanXiaomi extends HTMLElement {
       ui.querySelector('#buzzer').addEventListener('click', () => this._setService(entityId,hass,'buzzer'));
       ui.querySelector('#bnatural').addEventListener('click', () => this._setService(entityId,hass,'natural_speed'));
 
-      this.querySelector('svg').addEventListener('mousedown', (e) => this.onMouseDown(e,this),false);
-      this.querySelector('svg').addEventListener('touchstart', (e) => this.onMouseDown(e,this),false);
+      ui.querySelector('svg').addEventListener('mousedown', (e) => this.onMouseDown(e,this),false);
+      ui.querySelector('svg').addEventListener('touchstart', (e) => this.onMouseDown(e,this),false);
 
-      this.addEventListener('mouseup', (e) => this.onMouseUp(e,this),false);
-      this.addEventListener('touchend', (e) => this.onMouseUp(e,this),false);
+      ui.addEventListener('mouseup', (e) => this.onMouseUp(e,this),false);
+      ui.addEventListener('touchend', (e) => this.onMouseUp(e,this),false);
 
-      this.addEventListener('mousemove', (e) => this.onMouseMove(e,this),{passive: false});
-      this.addEventListener('touchmove', (e) => this.onMouseMove(e,this),{passive: false});
+      ui.addEventListener('mousemove', (e) => this.onMouseMove(e,this),{passive: false});
+      ui.addEventListener('touchmove', (e) => this.onMouseMove(e,this),{passive: false});
 
     }
     if(state.state==="unavailable"){
@@ -164,7 +170,7 @@ class FanXiaomi extends HTMLElement {
       this.card.querySelector('.ellipsis').textContent = myname+'(离线)';
       this.card.querySelector('.fanbox').classList.remove('active');
       this.card.querySelector('#fan').classList.remove('active');
-      this.card.querySelector('.fanbox').classList.remove('oscillat');
+      this.card.querySelector('.fanbox').classList.remove('oscillat','oscillat30','oscillat60','oscillat90','oscillat120');
     }else{
       //在线
       const attrs = state.attributes;
@@ -177,7 +183,7 @@ class FanXiaomi extends HTMLElement {
         this.card.querySelector('.fanbox').classList.add('active')
         this.card.querySelector('#fan').classList.add('active')
         this.card.querySelector('.active .blades').style.animationDuration=(attrs.natural_speed?5-attrs.natural_speed/100*5+1:5-attrs.direct_speed/100*5+1)+'s';
-        attrs['oscillate']?this.card.querySelector('.fanbox').classList.add('oscillat'):this.card.querySelector('.fanbox').classList.remove('oscillat');
+        attrs['oscillate']?this.card.querySelector('.fanbox').classList.add('oscillat','oscillat'+this.old_angle):this.card.querySelector('.fanbox').classList.remove('oscillat');
         if(attrs['natural_speed']){
           this.card.querySelector('#power').classList.remove('show');
           this.card.querySelector('#direct').classList.remove('show');
@@ -200,9 +206,14 @@ class FanXiaomi extends HTMLElement {
       attrs['buzzer']?this.card.querySelector('#buzzer').classList.add('active'):this.card.querySelector('#buzzer').classList.remove('active');
       attrs['child_lock']?this.card.querySelector('#lock').classList.add('active'):this.card.querySelector('#lock').classList.remove('active');
       attrs['natural_speed']?this.card.querySelector('#bnatural').classList.add('active'):this.card.querySelector('#bnatural').classList.remove('active');
-      attrs['oscillate']?this.card.querySelector('#oscillate').classList.add('active'):this.card.querySelector('#oscillate').classList.remove('active');
-      attrs['oscillate']?this.card.querySelector('#angle').textContent = attrs['angle']:this.card.querySelector('#angle').textContent = 0 ;
-
+      if(attrs['oscillate']){
+        this.card.querySelector('#oscillate').classList.add('active')
+        this.card.querySelector('#angle').textContent = attrs['angle']
+      }else{
+        this.card.querySelector('#oscillate').classList.remove('active');
+        this.card.querySelector('.fanbox').classList.remove('oscillat','oscillat30','oscillat60','oscillat90','oscillat120');
+        this.card.querySelector('#angle').textContent = 0 
+      }
       attrs['battery_charge']==='progress'?this.card.querySelector('.rightc').classList.add('battery_charge'):this.card.querySelector('.rightc').classList.remove('battery_charge');
       attrs['battery_charge']==='progress'?this.card.querySelector('.leftc').classList.add('battery_charge'):this.card.querySelector('.leftc').classList.remove('battery_charge');
       if(attrs['battery']){
@@ -347,11 +358,13 @@ getUI() {
 <style>
 #aspect-ratio {
   position: relative;
+  width: `+100*(this.config.aspect_ratio||1)+`%;
 }
 #aspect-ratio::before {
   content: "";
   display: block;
   padding-bottom: 100%;
+  
 }
 #aspect-ratio>:first-child {
   position: absolute;
@@ -359,6 +372,7 @@ getUI() {
   left: 0;
   height: 100%;
   width: 100%;
+  background: `+(this.config.background_color||'')+`;
 }
 #container{
   height: 100%;
@@ -391,7 +405,6 @@ getUI() {
   justify-content:center;
   width: 80%;
   margin: 0 10%;
-  background: var(--card-background-color);
 }
 .buttons>*{
   position: relative;
@@ -416,6 +429,10 @@ p{margin:0;padding:0}
 `+csss+`
 .fanbox{position:relative;margin:13%;width: 74%; height: 74%;border-radius:50%;background:#80808061}
 .fanbox.active.oscillat{animation:oscillate 8s infinite linear}
+.fanbox.active.oscillat30{animation:oscillate30 8s infinite linear}
+.fanbox.active.oscillat60{animation:oscillate60 8s infinite linear}
+.fanbox.active.oscillat90{animation:oscillate90 8s infinite linear}
+.fanbox.active.oscillat120{animation:oscillate120 8s infinite linear}
 .blades div{position:absolute;margin:15% 0 0 15%;width:35%;height:35%;border-radius:100% 50% 0;background:#989898;transform-origin:100% 100%}
 .blades{width:100%;height:100%}
 .fanbox.active .blades{transform-origin:50% 50%;animation:blades 3s infinite linear;transform-box:fill-box!important}
@@ -490,7 +507,6 @@ p{margin:0;padding:0}
   top: calc(50% - 20px);
   height: 40px;
   width: 40px;
-  background: var(--paper-card-background-color);
   color: var(--header-color);
   z-index:100;
 }
@@ -498,7 +514,6 @@ p{margin:0;padding:0}
   left: calc(50% - 20px);
   height: 40px;
   width: 40px;
-  background: var(--paper-card-background-color);
   color: var(--header-color);
   z-index:100;
 }
@@ -562,7 +577,30 @@ to{transform:translate(0,0) rotate(3600deg)}
 75%{transform:perspective(10em) rotateY(-40deg)}
 100%{transform:perspective(10em) rotateY(0)}
 }
-
+@keyframes oscillate30{0%{transform:perspective(10em) rotateY(0)}
+25%{transform:perspective(10em) rotateY(10deg)}
+50%{transform:perspective(10em) rotateY(0)}
+75%{transform:perspective(10em) rotateY(-10deg)}
+100%{transform:perspective(10em) rotateY(0)}
+}
+@keyframes oscillate60{0%{transform:perspective(10em) rotateY(0)}
+25%{transform:perspective(10em) rotateY(20deg)}
+50%{transform:perspective(10em) rotateY(0)}
+75%{transform:perspective(10em) rotateY(-20deg)}
+100%{transform:perspective(10em) rotateY(0)}
+}
+@keyframes oscillate90{0%{transform:perspective(10em) rotateY(0)}
+25%{transform:perspective(10em) rotateY(30deg)}
+50%{transform:perspective(10em) rotateY(0)}
+75%{transform:perspective(10em) rotateY(-30deg)}
+100%{transform:perspective(10em) rotateY(0)}
+}
+@keyframes oscillate120{0%{transform:perspective(10em) rotateY(0)}
+25%{transform:perspective(10em) rotateY(40deg)}
+50%{transform:perspective(10em) rotateY(0)}
+75%{transform:perspective(10em) rotateY(-40deg)}
+100%{transform:perspective(10em) rotateY(0)}
+}
 
 </style>
     <div id="container">
@@ -655,12 +693,25 @@ export class FanXiaomiCardEditor extends LitElement {
       <paper-input
           label="${this.hass.localize("ui.panel.lovelace.editor.card.generic.title")} (${this.hass.localize("ui.panel.lovelace.editor.card.config.optional")})"
           .value="${this.config.name}"
-          .configValue="${"title"}"
-          @value-changed="${this._titleChanged}"
+          .configValue="${"name"}"
+          @value-changed="${this._valueChanged}"
       ></paper-input>
+      <div class="side-by-side">
+        <paper-input
+          label="${this.hass.localize("ui.panel.lovelace.editor.card.generic.aspect_ratio")} (${this.hass.localize("ui.panel.lovelace.editor.card.config.optional")})"
+          .value="${this.config.aspect_ratio}"
+          .configValue="${"aspect_ratio"}"
+          @value-changed="${this._valueChanged}"
+        ></paper-input>
+        <paper-input-container>
+            <label slot="label">背景颜色</label>
+            <input type="color" value="${this.config.background_color?this.config.background_color:""}" slot="input" .configValue="${"background_color"}" @input="${this._valueChanged}">
+            <ha-icon-button slot="suffix" icon="${this.config.background_color?"mdi:palette":"mdi:palette-outline"}" title="${this.hass.localize("ui.panel.lovelace.editor.card.map.delete")}" .type="${"background_color"}" @click=${this._delEntity}></ha-icon-button>
+        </paper-input-container>
+      </div>
       <paper-input-container >
           <label slot="label">${this.hass.localize("ui.panel.lovelace.editor.card.entities.name")}</label>
-          <input type="text" value="${this.config.entity}" slot="input" list="entitieslist" autocapitalize="none" @change=${this._addEntity} @focus=${this._focusEntity}>
+          <input type="text" value="${this.config.entity}" slot="input" list="entitieslist" autocapitalize="none" .configValue="${"entity"}" @change=${this._valueChanged} @focus=${this._focusEntity}>
       </paper-input-container>
     </div>
     <datalist id="entitieslist">
@@ -670,38 +721,56 @@ export class FanXiaomiCardEditor extends LitElement {
     </datalist>
     `
   }
+  static get styles() {
+    return css `
+    a{
+      color: var(--accent-color);
+    }
+    .side-by-side {
+        display: flex;
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+      .side-by-side > * {
+        flex: 1;
+        padding-right: 4px;
+      }
+      .info > * {
+        flex: none;
+        width: calc(33% - 10px);
+        padding: 0 5px;
+      }
+
+      ha-switch{
+        margin-right: 10px;
+      }
+      ha-icon-button{
+        --mdc-icon-button-size: 24px;
+      }
+      .fs{
+          flex:0.3;
+      }
+    `
+  }
   _focusEntity(e){
     // const target = e.target;
     e.target.value = ''
   }
 
-  _titleChanged(e){
+  _valueChanged(e){
     const target = e.target;
 
     if (!this.config || !this.hass || !target ) {
         return;
     }
-    
-    if(target.configValue == "title"){
-        this.config = {
-            ...this.config,
-            "name": target.value
-        };
-    }
-    this.configChanged(this.config)
-  }
-  _addEntity(ev){
-    const target = ev.target.value;
-    if (!this.config || !this.hass || !this.hass.states[target]) {
-      return;
-    }
-    this.config = {
-        ...this.config,
-        "entity": target
+    let configValue = target.configValue
+    let newConfig = {
+        ...this.config
     };
-    this.configChanged(this.config)
-
+        newConfig[configValue] = target.value
+    this.configChanged(newConfig)
   }
+
   configChanged(newConfig) {
     const event = new Event("config-changed", {
       bubbles: true,
@@ -715,7 +784,7 @@ customElements.define("fan-xiaomi-card-editor", FanXiaomiCardEditor);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "fan-xiaomi",
-  name: "电风扇",
+  name: "Xiaomi Fan Lovelace Card",
   preview: true, // Optional - defaults to false
   description: "小米电风扇卡片" // Optional
 });
