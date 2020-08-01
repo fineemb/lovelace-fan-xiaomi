@@ -4,7 +4,7 @@
  * @Description   : 
  * @Date          : 2019-10-13 17:46:58
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-08-01 22:26:53
+ * @LastEditTime  : 2020-08-01 22:58:48
  -->
 # Xiaomi Fan Lovelace Card
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
@@ -58,6 +58,4 @@ Search for Lovelace-fan-xiaomi
     ```
 
 ## Credits
-[shaonianzhentan](https://github.com/shaonianzhentan/) 
-
 [花神](https://github.com/yaming116)

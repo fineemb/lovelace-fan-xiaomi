@@ -4,7 +4,7 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-08-01 22:22:28
+ * @LastEditTime  : 2020-08-01 23:31:42
  */
 
 console.info("%c Xiaomi Fan Card \n%c  Version  1.3.0 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
@@ -54,7 +54,7 @@ export class FanXiaomiCard extends LitElement {
     return html`
     <div id="aspect-ratio" 
       style="width:${100*this.config.aspect_ratio||100}%" 
-      class="${state.state=='unavailable'?'offline':''}" 
+      class="${state.state=='unavailable'||state.state.state=='unavailable'?'offline':''}" 
       @touchstart="${clearTimeout(this.to)}"
       @mouseout="${function(){this.over=false}}" 
       @mouseover="${function(){this.over=true}}" 
@@ -62,9 +62,9 @@ export class FanXiaomiCard extends LitElement {
       @touchmove="${this.onMouseMove}"
       @mouseup="${this.onMouseUp}"
       @touchend="${this.onMouseUp}">
-      <ha-card id="fan" class="${state.state=='on'?'active':''}" style="background:${this.config.background_color||''}">
+      <ha-card id="fan" class="${state.state=='on'||state.state.state=='on'?'active':''}" style="background:${this.config.background_color||''}">
         <div id="container">
-          <div class="fanbox ${state.state=='on'?'active':''} ${attrs['oscillate']?"oscillate"+attrs['angle']:""}">
+          <div class="fanbox ${state.state=='on'||state.state.state=='on'?'active':''} ${attrs['oscillate']?"oscillate"+attrs['angle']:""}">
             <div class="blades" style="animation-duration:${attrs.natural_speed?5-attrs.natural_speed/100*5+1:5-attrs.direct_speed/100*5+1}s">
               <div class="b1 ang1"></div>
               <div class="b2 ang25"></div>
@@ -74,7 +74,7 @@ export class FanXiaomiCard extends LitElement {
             ${fan1s.map(i => html`<div class="fan1 ang${i}"></div>`)}
             <div class="c2"></div>
             <div class="c3">
-                <ha-icon id="power" icon="${state.state=='on'?(attrs['natural_speed']?'mdi:leaf':'mdi:weather-windy'):'mdi:power'}" class="c_icon state show" role="button" tabindex="0" aria-disabled="false" .cmd="${'toggle'}" @click=${this._action}></ha-icon>
+                <ha-icon id="power" icon="${state.state=='on'||state.state.state=='on'?(attrs['natural_speed']?'mdi:leaf':'mdi:weather-windy'):'mdi:power'}" class="c_icon state show" role="button" tabindex="0" aria-disabled="false" .cmd="${'toggle'}" @click=${this._action}></ha-icon>
             </div>
             <div class="c1">
               <div class="wrapper rightc ${attrs['battery_charge']!="complete"?"battery_charge":""} ${attrs['battery']<20?"red":""}">
