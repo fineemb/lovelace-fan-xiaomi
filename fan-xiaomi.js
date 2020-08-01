@@ -4,21 +4,32 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-07-30 15:58:52
+ * @LastEditTime  : 2020-08-01 22:22:28
  */
 
-console.info("%c Xiaomi Fan Card \n%c  Version  1.2.2 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
-
+console.info("%c Xiaomi Fan Card \n%c  Version  1.3.0 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+import(`https://unpkg.com/@material/mwc-slider@0.17.2/mwc-slider.js?module`);
 const LitElement = Object.getPrototypeOf(
   customElements.get("ha-panel-lovelace")
 );
 const html = LitElement.prototype.html;
 const css = LitElement.prototype.css;
 
-class FanXiaomi extends HTMLElement {
-  constructor() {
-    super();
-    this.Cmd = []
+export class FanXiaomiCard extends LitElement {
+  setConfig(config) {
+    this.config = config;
+  }
+
+  static get properties() {
+      return {
+          hass: {},
+          config: {},
+          over:false,
+          to:{},
+          x0:false,
+          y0:false,
+          speedvalue:0
+      };
   }
   static getConfigElement() {
     return document.createElement("fan-xiaomi-card-editor");
@@ -29,214 +40,399 @@ class FanXiaomi extends HTMLElement {
             aspect_ratio: '1',
             background_color:''}
   }
-  set hass(hass) {
-    this._hass = hass;
-    let entityId
-    var patt = new RegExp("^fan")
-    if(this.config.entity){
-      entityId = this.config.entity;
-    }else{
-      Object.keys(hass.states).filter(a => patt.test(a) ).map(entId => {
-        if(hass.states[entId].attributes.model != undefined && hass.states[entId].attributes.model.indexOf("fan") != -1){
-          entityId = entId;
-        }
+  render() {
+    let fans=[];
+    for(var i=1;i<73;i++){
+      fans.push(i)
+    }
+    let fan1s=[];
+    for(var i=1;i<73;i+=2){
+      fan1s.push(i)
+    }
+    const state = this.hass.states[this.config.entity];
+    const attrs = state.attributes;
+    return html`
+    <div id="aspect-ratio" 
+      style="width:${100*this.config.aspect_ratio||100}%" 
+      class="${state.state=='unavailable'?'offline':''}" 
+      @touchstart="${clearTimeout(this.to)}"
+      @mouseout="${function(){this.over=false}}" 
+      @mouseover="${function(){this.over=true}}" 
+      @mousemove="${this.onMouseMove}"
+      @touchmove="${this.onMouseMove}"
+      @mouseup="${this.onMouseUp}"
+      @touchend="${this.onMouseUp}">
+      <ha-card id="fan" class="${state.state=='on'?'active':''}" style="background:${this.config.background_color||''}">
+        <div id="container">
+          <div class="fanbox ${state.state=='on'?'active':''} ${attrs['oscillate']?"oscillate"+attrs['angle']:""}">
+            <div class="blades" style="animation-duration:${attrs.natural_speed?5-attrs.natural_speed/100*5+1:5-attrs.direct_speed/100*5+1}s">
+              <div class="b1 ang1"></div>
+              <div class="b2 ang25"></div>
+              <div class="b3 ang49"></div>
+            </div>
+            ${fans.map(i => html`<div class="fan ang${i}"></div>`)}
+            ${fan1s.map(i => html`<div class="fan1 ang${i}"></div>`)}
+            <div class="c2"></div>
+            <div class="c3">
+                <ha-icon id="power" icon="${state.state=='on'?(attrs['natural_speed']?'mdi:leaf':'mdi:weather-windy'):'mdi:power'}" class="c_icon state show" role="button" tabindex="0" aria-disabled="false" .cmd="${'toggle'}" @click=${this._action}></ha-icon>
+            </div>
+            <div class="c1">
+              <div class="wrapper rightc ${attrs['battery_charge']!="complete"?"battery_charge":""} ${attrs['battery']<20?"red":""}">
+                <div class="circle rightcircle" style="transform:${attrs['battery']?attrs['battery']<50?"rotate(-135deg)":"rotate("+(attrs['battery']/(100/360)-180-135)+"deg)":""}"></div>
+              </div>
+              <div class="wrapper leftc ${attrs['battery_charge']!="complete"?"battery_charge":""} ${attrs['battery']<20?"red":""}">
+                <div class="circle leftcircle" style="transform:${attrs['battery']?attrs['battery']<50?"rotate("+(attrs['battery']/(100/360)-135)+"deg)":"rotate(45deg)":""}"></div>
+              </div>
+            </div>
+            <svg id="speedsvg" class="${this.over?'show':'hidden'}" width="100%" height="100%" viewBox="0 0 400 400"  @mousedown="${this.onMouseDown}" @touchstart="${this.onMouseDown}">
+              <circle 
+                id="speed" 
+                cx="200" 
+                cy="200" 
+                r="170" 
+                fill="none" 
+                class="grab" 
+                style="stroke: var(--paper-item-icon-active-color); fill: none; stroke-width: 8; stroke-dasharray: 1068.14; transform: rotate(90deg); transform-origin: 50% 50%; stroke-dashoffset: ${this.speedvalue?(1-this.speedvalue)* Math.PI*340:attrs['natural_speed']?(1-attrs['natural_speed']/100) * Math.PI*340:(1-attrs['direct_speed']/100) * Math.PI*340};"></circle>
+            </svg>
+          </div>
+        </div>
+
+        <div class="chevron left ${this.over?'show':'hidden'}">
+          <ha-icon-button icon="mdi:chevron-left" class="c_icon" role="button" tabindex="0" aria-disabled="false" .cmd="${'set_direction_left'}" @click=${this._action}></ha-icon-button>
+        </div>
+        <div class="chevron right ${this.over?'show':'hidden'}">
+          <ha-icon-button icon="mdi:chevron-right" class="c_icon" role="button" tabindex="0" aria-disabled="false" .cmd="${'set_direction_right'}" @click=${this._action}></ha-icon-button>
+        </div>
+        <div class="prop">
+          <ha-icon-button id="more" icon="mdi:dots-vertical" class="c_icon" role="button" tabindex="0" aria-disabled="false" .cmd="${'more'}" @click=${this._action}></ha-icon-button>
+        </div>
+        <div id="buttons" class="${this.over?'show':'hidden'}">
+          <ha-icon-button id="lock" icon="hass:lock" class="c_icon ${attrs['child_lock']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'lock'}" @click=${this._action}></ha-icon-button>
+          <mwc-icon-button id="oscillate" class="c_icon ${attrs['oscillate']?"active":""}" .cmd="${'oscillate'}" @click=${this._action}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path d="M4,6l1,-6l5,6.5z"></path>
+              <path id="oc" d="M3,7A 10 10, 0, 1, 0, 5.5 4," fill="none" style="stroke-width: 2"></path>
+              <text  x="12" y="12">
+                <tspan id="angle">${attrs['oscillate']?attrs['angle']==118?"120":attrs['angle']:"0"}</tspan>
+              </text>
+            </svg>
+          </mwc-icon-button>
+          <ha-icon-button id="bnatural" icon="mdi:leaf" class="c_icon ${attrs['natural_speed']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'natural_speed'}" @click=${this._action}></ha-icon-button>
+          <ha-icon-button id="buzzer" icon="mdi:surround-sound" class="c_icon ${attrs['buzzer']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'buzzer'}" @click=${this._action}></ha-icon-button>
+        </div>
+        <div class="header" style="font-size: 9px;" class="${this.over?'hidden':'show'}">   
+            <div class="name">
+              <span class="ellipsis show" style="">${this.config.name}</span>
+            </div>
+        </div>
+      </ha-card>
+    </div>
+    `
+  }
+  static get styles() {
+    return css `
+    #aspect-ratio {position: relative;}
+    #aspect-ratio::before {content: "";display: block;padding-bottom: 100%;}
+    #aspect-ratio>:first-child {position: absolute;top: 0;left: 0;height: 100%;width: 100%;}
+    #container{height: 100%;width: 100%;display: flex;overflow: hidden;}
+    #buttons{position: absolute;bottom: 0;justify-content:center;width: 80%;margin: 0 10%;}
+    #buttons>*{position: relative;}
+    #buttons.show{display: flex;}
+    #buttons ha-icon-button ,#buttons mwc-icon-button{--mdc-icon-button-size: 32px; }
+    #buttons tspan{text-anchor: middle;font-family: Helvetica, sans-serif;alignment-baseline: central;dominant-baseline: central;font-size: 10px;}
+    #speedsvg {position:absolute;top: 0;}
+
+    .c_icon {position: absolute;cursor: pointer;top: 0;right: 0;z-index: 25;}
+    .c_icon.active{color:var(--paper-item-icon-active-color);fill:var(--paper-item-icon-active-color);}
+    .c_icon #oc{stroke:var(--primary-text-color)}
+    .c_icon.active #oc{stroke:var(--paper-item-icon-active-color);}
+
+    .offline{opacity:0.5}
+    .ang1 {transform: rotate(0deg)}.ang2 {transform: rotate(5deg)}.ang3 {transform: rotate(10deg)}.ang4 {transform: rotate(15deg)}.ang5 {transform: rotate(20deg)}.ang6 {transform: rotate(25deg)}.ang7 {transform: rotate(30deg)}.ang8 {transform: rotate(35deg)}.ang9 {transform: rotate(40deg)}.ang10 {transform: rotate(45deg)}.ang11 {transform: rotate(50deg)}.ang12 {transform: rotate(55deg)}.ang13 {transform: rotate(60deg)}.ang14 {transform: rotate(65deg)}.ang15 {transform: rotate(70deg)}.ang16 {transform: rotate(75deg)}.ang17 {transform: rotate(80deg)}.ang18 {transform: rotate(85deg)}.ang19 {transform: rotate(90deg)}.ang20 {transform: rotate(95deg)}.ang21 {transform: rotate(100deg)}.ang22 {transform: rotate(105deg)}.ang23 {transform: rotate(110deg)}.ang24 {transform: rotate(115deg)}.ang25 {transform: rotate(120deg)}.ang26 {transform: rotate(125deg)}.ang27 {transform: rotate(130deg)}.ang28 {transform: rotate(135deg)}.ang29 {transform: rotate(140deg)}.ang30 {transform: rotate(145deg)}.ang31 {transform: rotate(150deg)}.ang32 {transform: rotate(155deg)}.ang33 {transform: rotate(160deg)}.ang34 {transform: rotate(165deg)}.ang35 {transform: rotate(170deg)}.ang36 {transform: rotate(175deg)}.ang37 {transform: rotate(180deg)}.ang38 {transform: rotate(185deg)}.ang39 {transform: rotate(190deg)}.ang40 {transform: rotate(195deg)}.ang41 {transform: rotate(200deg)}.ang42 {transform: rotate(205deg)}.ang43 {transform: rotate(210deg)}.ang44 {transform: rotate(215deg)}.ang45 {transform: rotate(220deg)}.ang46 {transform: rotate(225deg)}.ang47 {transform: rotate(230deg)}.ang48 {transform: rotate(235deg)}.ang49 {transform: rotate(240deg)}.ang50 {transform: rotate(245deg)}.ang51 {transform: rotate(250deg)}.ang52 {transform: rotate(255deg)}.ang53 {transform: rotate(260deg)}.ang54 {transform: rotate(265deg)}.ang55 {transform: rotate(270deg)}.ang56 {transform: rotate(275deg)}.ang57 {transform: rotate(280deg)}.ang58 {transform: rotate(285deg)}.ang59 {transform: rotate(290deg)}.ang60 {transform: rotate(295deg)}.ang61 {transform: rotate(300deg)}.ang62 {transform: rotate(305deg)}.ang63 {transform: rotate(310deg)}.ang64 {transform: rotate(315deg)}.ang65 {transform: rotate(320deg)}.ang66 {transform: rotate(325deg)}.ang67 {transform: rotate(330deg)}.ang68 {transform: rotate(335deg)}.ang69 {transform: rotate(340deg)}.ang70 {transform: rotate(345deg)}.ang71 {transform: rotate(350deg)}.ang72 {transform: rotate(355deg)}
+    .fanbox{position:relative;margin:13%;width: 74%; height: 74%;border-radius:50%;background:#80808061}
+    
+    #fan.active .oscillate{animation:oscillate 8s infinite linear}
+    #fan.active .oscillate30{animation:oscillate30 8s infinite linear}
+    #fan.active .oscillate60{animation:oscillate60 8s infinite linear}
+    #fan.active .oscillate90{animation:oscillate90 8s infinite linear}
+    #fan.active .oscillate118{animation:oscillate120 8s infinite linear}
+    #fan.active .blades{transform-origin:50% 50%;animation:blades 3s infinite linear;transform-box:fill-box!important}
+
+    .blades div{position:absolute;margin:15% 0 0 15%;width:35%;height:35%;border-radius:100% 50% 0;background:#989898;transform-origin:100% 100%}
+    .blades{width:100%;height:100%}
+    
+    .fan{top:0;transform-origin:0 250%}
+    .fan,.fan1{position:absolute;left:0;margin-left:50%;width:1%;height:20%;background:#fff}
+    .fan1{top:20%;transform-origin:0 150%}
+    .c1{top:20%;left:20%;width:60%;height:60%;border:2px solid #fff;border-radius:50%;cursor:pointer;baskground:#ffffff00}
+    .c1,.c2{position:absolute;box-sizing:border-box}
+    .c2{top:-1%;left:-1%;width:102%;height:102%;border:10px solid #f7f7f7;border-radius:50%;background: #ffffff01;}
+    .c3{position:absolute;top:40%;left:40%;box-sizing:border-box;width:20%;height:20%;border-radius:50%;background:#fff;color:#ddd}
+    
+    .c3 ha-icon{
+      width: 80%;
+      height: 80%;
+      outline: none;
+      --mdc-icon-size: 100%;
+      top: 10%;
+      right: 10%;
+    }
+    
+
+    .c1 .wrapper{
+      width: calc(50% + 2px);
+      height: calc(100% + 4px);
+      position: absolute;
+      top:-2px;
+      overflow: hidden;
+    }
+    .c1 .rightc{
+      right:-2px;
+    }
+    .c1 .leftc{
+      left:-2px;
+    }
+    .c1 .circle{
+      width: 200%;
+      height: 100%;
+      box-sizing:border-box;
+      border:2px solid transparent;
+      border-radius: 50%;
+      position: absolute;
+      top:0;
+      transform : rotate(-135deg);
+    }
+    .c1 .rightcircle{
+      border-top:2px solid #63ff69;
+      border-right:2px solid #63ff69;
+      right:0;
+    
+    }
+    .c1 .leftcircle{
+      border-bottom:2px solid #63ff69;
+      border-left:2px solid #63ff69;
+      left:0;
+    
+    }
+    .c1 .battery_charge{
+      -webkit-animation: battery_charge 2s linear infinite;
+    }
+    .c1.red .leftcircle{
+      border-bottom:2px solid #ff5722;
+      border-left:2px solid #ff5722;
+    }
+    .name {
+      width: 100%;
+      position: absolute;
+      bottom: 0px;
+      margin-bottom: 5px;
+      text-align: center;
+      opacity: 0.5;
+    }
+    .chevron{position: absolute;
+      top: calc(50% - 20px);
+      height: 40px;
+      width: 40px;
+      color: var(--header-color);
+      z-index:100;
+    }
+    .speed{position: absolute;
+      left: calc(50% - 20px);
+      height: 40px;
+      width: 40px;
+      color: var(--header-color);
+      z-index:100;
+    }
+    .show{display: block;}
+    .hidden{display: none;}
+
+    .chevron.left{left: 0;border-radius:20px;--mdc-icon-button-size: 40px;}
+    .chevron.right{right: 0;border-radius:20px;--mdc-icon-button-size: 40px;}
+    
+    .speed.top{top: 0;border-radius:20px;}
+    .speed.bottom{bottom: 0;border-radius:20px;}
+    
+    .state{
+      display: none;
+    }
+    .state.show{
+      display: block;
+    }
+    @-webkit-keyframes circle_right{
+      0%{
+          -webkit-transform: rotate(-135deg);
+      }
+      50%,100%{
+          -webkit-transform: rotate(45deg);
+      }
+    }
+    @-webkit-keyframes circle_left{
+      0%,50%{
+          -webkit-transform: rotate(-135deg);
+      }
+      100%{
+          -webkit-transform: rotate(45deg);
+      }
+    }
+    
+    @-webkit-keyframes battery_charge{
+      50%{
+        opacity:1;
+    }
+      0%,100%{
+        opacity:0;
+    }
+    }
+    
+    @keyframes blades{0%{transform:translate(0,0) rotate(0)}
+    to{transform:translate(0,0) rotate(3600deg)}
+    }
+    @keyframes oscillate{0%{transform:perspective(10em) rotateY(0)}
+    25%{transform:perspective(10em) rotateY(40deg)}
+    50%{transform:perspective(10em) rotateY(0)}
+    75%{transform:perspective(10em) rotateY(-40deg)}
+    100%{transform:perspective(10em) rotateY(0)}
+    }
+    @keyframes oscillate30{0%{transform:perspective(10em) rotateY(0)}
+    25%{transform:perspective(10em) rotateY(10deg)}
+    50%{transform:perspective(10em) rotateY(0)}
+    75%{transform:perspective(10em) rotateY(-10deg)}
+    100%{transform:perspective(10em) rotateY(0)}
+    }
+    @keyframes oscillate60{0%{transform:perspective(10em) rotateY(0)}
+    25%{transform:perspective(10em) rotateY(20deg)}
+    50%{transform:perspective(10em) rotateY(0)}
+    75%{transform:perspective(10em) rotateY(-20deg)}
+    100%{transform:perspective(10em) rotateY(0)}
+    }
+    @keyframes oscillate90{0%{transform:perspective(10em) rotateY(0)}
+    25%{transform:perspective(10em) rotateY(30deg)}
+    50%{transform:perspective(10em) rotateY(0)}
+    75%{transform:perspective(10em) rotateY(-30deg)}
+    100%{transform:perspective(10em) rotateY(0)}
+    }
+    @keyframes oscillate120{0%{transform:perspective(10em) rotateY(0)}
+    25%{transform:perspective(10em) rotateY(40deg)}
+    50%{transform:perspective(10em) rotateY(0)}
+    75%{transform:perspective(10em) rotateY(-40deg)}
+    100%{transform:perspective(10em) rotateY(0)}
+    }
+    `
+  }
+  _mouseover(e){
+    this.over=true;
+  }
+  _action(e){
+    const target = e.target;
+    
+
+    if (!this.config || !this.hass || !target ) {
+        return;
+    }
+    let attr = this.hass.states[this.config.entity].attributes
+    let state = this.hass.states[this.config.entity].state
+    if(target.cmd == "toggle"){
+      this.hass.callService('fan', 'toggle', {
+        entity_id: this.config.entity
       });
-    }
-    const myname = this.config.name;
-    const state = hass.states[entityId];
-    const ui = this.getUI();
-    this.old_angle = state.attributes['angle'];
-
-    if (!this.card) {
-      //初始化界面
-      this.x0 = false;
-      this.flag = true;
-      this.min = 0;
-      this.max = 100;
-      const card = document.createElement('div')
-      card.id = 'aspect-ratio'
-      card.appendChild(ui);      
-      ui.onmouseover = () => {
-        ui.querySelector('.ellipsis').classList.replace('show','hidden')
-        ui.querySelector('#buttons').classList.replace('hidden','show')
-        
-        if(ui.querySelector('.active .left')){
-          ui.querySelector('svg').classList.replace('hidden','show')
-          ui.querySelector('.active .left').classList.replace('hidden','show')
-          ui.querySelector('.active .right').classList.replace('hidden','show')
-        }
-      }
-      ui.onmouseout = () => {
-        ui.querySelector('.left').classList.replace('show','hidden')
-        ui.querySelector('.right').classList.replace('show','hidden')
-        ui.querySelector('.ellipsis').classList.replace('hidden','show')
-        ui.querySelector('#buttons').classList.replace('show','hidden')
-        ui.querySelector('svg').classList.replace('show','hidden')
-      }
-      ui.ontouchstart = () => {
-        clearTimeout(this.tid)
-        ui.querySelector('.ellipsis').classList.replace('show','hidden')
-        ui.querySelector('#buttons').classList.replace('hidden','show')
-        
-        if(ui.querySelector('.active .left')){
-          ui.querySelector('svg').classList.replace('hidden','show')
-          ui.querySelector('.active .left').classList.replace('hidden','show')
-          ui.querySelector('.active .right').classList.replace('hidden','show')
-        }
-      }
-
-      ui.ontouchend = () => {
-        this.tid = setTimeout(function() { 
-          ui.querySelector('.left').classList.replace('show','hidden')
-          ui.querySelector('.right').classList.replace('show','hidden')
-          ui.querySelector('.ellipsis').classList.replace('hidden','show')
-          ui.querySelector('#buttons').classList.replace('show','hidden')
-          ui.querySelector('svg').classList.replace('show','hidden')
-         }, 5000);
-      }
-
-      card.querySelector('.ellipsis').textContent = myname;
-      ui.querySelector('#more').onclick = () => {
-        this.fire('hass-more-info', { entityId: entityId });
-      }
-      this.card = card;
-      this.appendChild(card);
+    }else if(target.cmd == "buzzer"){
+      this.hass.callService('fan', attr['buzzer']?"xiaomi_miio_set_buzzer_off":"xiaomi_miio_set_buzzer_on", {
+        entity_id: this.config.entity
+      });
+    }else if(target.cmd == "natural_speed" && state=="on"){
+      this.hass.callService('fan', attr['natural_speed']?"xiaomi_miio_set_natural_mode_off":"xiaomi_miio_set_natural_mode_on", {
+        entity_id: this.config.entity
+      });
+    }else if(target.cmd == "lock"){
+      this.hass.callService('fan', attr['child_lock']?"xiaomi_miio_set_child_lock_off":"xiaomi_miio_set_child_lock_on", {
+        entity_id: this.config.entity
+      });
+    }else if(target.cmd == "set_direction_left" && state=="on"){
+      this.hass.callService('fan', 'set_direction', {
+        entity_id: this.config.entity,
+        direction: 'left'
+      });
+    }else if(target.cmd == "set_direction_right" && state=="on"){
+      this.hass.callService('fan', 'set_direction', {
+        entity_id: this.config.entity,
+        direction: 'right'
+      });
+    }else if(target.cmd == "oscillate"){
       
-      //执行命令
-      ui.querySelector('.c3').onclick = () => {
-        hass.callService('fan', 'toggle', {
-          entity_id: entityId
-        });
-      }
-      ui.querySelector('#oscillate').onclick = () => {
-        let new_angle = this.old_angle+30>120?0:this.old_angle+30;
-        this.old_angle = new_angle;
-        if(new_angle){
-          hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
-            entity_id: entityId,
-            angle: new_angle
+      if(attr['oscillate']){
+        if(attr['angle']<110){
+          this.hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
+            entity_id: this.config.entity,
+            angle: attr['angle']+30
           });
-          this.card.querySelector('.fanbox').classList.remove('oscillat','oscillat30','oscillat60','oscillat90','oscillat120');
-          this.card.querySelector('.fanbox').classList.add('oscillat'+new_angle)
         }else{
-          if(this.Cmd["oscillate"]){
-            hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
-              entity_id: entityId,
-              angle: 30
-            });
-            new_angle = 30;
-            this.card.querySelector('.fanbox').classList.remove('oscillat','oscillat30','oscillat60','oscillat90','oscillat120');
-            this.card.querySelector('.fanbox').classList.add('oscillat30')
-          }else{
-            hass.callService('fan', 'oscillate', {
-              entity_id: entityId,
-              oscillating: this.Cmd['oscillate']
-            });
-            new_angle = 0;
-          }
-        }
-        this.card.querySelector('#angle').textContent = "^_^" 
-      }
-      ui.querySelector('.right').onclick = () => {
-        hass.callService('fan', 'set_direction', {
-          entity_id: entityId,
-          direction: 'right'
-        });
-      }
-      ui.querySelector('.left').onclick = () => {
-        hass.callService('fan', 'set_direction', {
-          entity_id: entityId,
-          direction: 'left'
-        });
-      }
-      ui.querySelector('#lock').addEventListener('click', () => this._setService(entityId,hass,'lock'));
-      ui.querySelector('#buzzer').addEventListener('click', () => this._setService(entityId,hass,'buzzer'));
-      ui.querySelector('#bnatural').addEventListener('click', () => this._setService(entityId,hass,'natural_speed'));
-
-      ui.querySelector('svg').addEventListener('mousedown', (e) => this.onMouseDown(e,this),false);
-      ui.querySelector('svg').addEventListener('touchstart', (e) => this.onMouseDown(e,this),false);
-
-      ui.addEventListener('mouseup', (e) => this.onMouseUp(e,this),false);
-      ui.addEventListener('touchend', (e) => this.onMouseUp(e,this),false);
-
-      ui.addEventListener('mousemove', (e) => this.onMouseMove(e,this),{passive: false});
-      ui.addEventListener('touchmove', (e) => this.onMouseMove(e,this),{passive: false});
-
-    }
-    if(state.state==="unavailable"){
-      // 离线
-      this.card.classList.add('offline');
-      this.querySelector('svg').classList.replace('show','hidden')
-      this.card.querySelector('.ellipsis').textContent = myname+'(离线)';
-      this.card.querySelector('.fanbox').classList.remove('active');
-      this.card.querySelector('#fan').classList.remove('active');
-      this.card.querySelector('.fanbox').classList.remove('oscillat','oscillat30','oscillat60','oscillat90','oscillat120');
-    }else{
-      //在线
-      const attrs = state.attributes;
-      this.card.classList.remove('offline');
-      this.card.querySelector('.ellipsis').textContent = myname;
-      if(state.state==="on"){
-        //运行
-        // this.querySelector('svg').classList.replace('hidden','show')
-        attrs['natural_speed']?this.querySelector('#speed').style.strokeDashoffset = ( (1-attrs['natural_speed']/100) * Math.PI*340 ).toString():this.querySelector('#speed').style.strokeDashoffset = ( (1-attrs['direct_speed']/100) * Math.PI*340 ).toString();
-        this.card.querySelector('.fanbox').classList.add('active')
-        this.card.querySelector('#fan').classList.add('active')
-        this.card.querySelector('.active .blades').style.animationDuration=(attrs.natural_speed?5-attrs.natural_speed/100*5+1:5-attrs.direct_speed/100*5+1)+'s';
-        attrs['oscillate']?this.card.querySelector('.fanbox').classList.add('oscillat','oscillat'+this.old_angle):this.card.querySelector('.fanbox').classList.remove('oscillat');
-        if(attrs['natural_speed']){
-          this.card.querySelector('#power').classList.remove('show');
-          this.card.querySelector('#direct').classList.remove('show');
-          this.card.querySelector('#natural').classList.add('show');
-        }else{
-          this.card.querySelector('#power').classList.remove('show');
-          this.card.querySelector('#direct').classList.add('show');
-          this.card.querySelector('#natural').classList.remove('show');
+          this.hass.callService('fan', 'oscillate', {
+            entity_id: this.config.entity,
+            oscillating: false
+          });
+          this.hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
+            entity_id: this.config.entity,
+            angle: 30
+          });
         }
       }else{
-        //关机
-        this.querySelector('svg').classList.replace('show','hidden')
-        this.card.querySelector('.fanbox').classList.remove('active');
-        this.card.querySelector('#power').classList.add('show');
-        this.card.querySelector('#direct').classList.remove('show');
-        this.card.querySelector('#natural').classList.remove('show');
-        this.card.querySelector('#fan').classList.remove('active');
+        this.hass.callService('fan', 'oscillate', {
+          entity_id: this.config.entity,
+          oscillating: true
+        });
       }
-      this.card.querySelector('#angle').textContent = attrs['angle'] ;
-      attrs['buzzer']?this.card.querySelector('#buzzer').classList.add('active'):this.card.querySelector('#buzzer').classList.remove('active');
-      attrs['child_lock']?this.card.querySelector('#lock').classList.add('active'):this.card.querySelector('#lock').classList.remove('active');
-      attrs['natural_speed']?this.card.querySelector('#bnatural').classList.add('active'):this.card.querySelector('#bnatural').classList.remove('active');
-      if(attrs['oscillate']){
-        this.card.querySelector('#oscillate').classList.add('active')
-        this.card.querySelector('#angle').textContent = attrs['angle']
-      }else{
-        this.card.querySelector('#oscillate').classList.remove('active');
-        this.card.querySelector('.fanbox').classList.remove('oscillat','oscillat30','oscillat60','oscillat90','oscillat120');
-        this.card.querySelector('#angle').textContent = 0 
-      }
-      attrs['battery_charge']==='progress'?this.card.querySelector('.rightc').classList.add('battery_charge'):this.card.querySelector('.rightc').classList.remove('battery_charge');
-      attrs['battery_charge']==='progress'?this.card.querySelector('.leftc').classList.add('battery_charge'):this.card.querySelector('.leftc').classList.remove('battery_charge');
-      if(attrs['battery']){
-        let battery = attrs['battery']
-        if(battery<50){
-          this.card.querySelector('.leftcircle').style.transform = "rotate("+(battery/(100/360)-135)+"deg)";
-          this.card.querySelector('.rightcircle').style.transform = "rotate(-135deg)";
-        }else{
-          this.card.querySelector('.leftcircle').style.transform = "rotate(45deg)";
-          this.card.querySelector('.rightcircle').style.transform = "rotate("+(battery/(100/360)-180-135)+"deg)";
-        }
-      }
+      attr['angle'] = "^_^"
+    }else if(target.cmd == "more"){
+      this.fire('hass-more-info', { entityId: this.config.entity });
     }
-    this.Cmd["lock"] = hass.states[entityId].attributes['child_lock']?"xiaomi_miio_set_child_lock_off":"xiaomi_miio_set_child_lock_on";
-    this.Cmd["oscillate"] = hass.states[entityId].attributes['oscillating']?false:true;
-    this.Cmd["buzzer"] = hass.states[entityId].attributes['buzzer']?"xiaomi_miio_set_buzzer_off":"xiaomi_miio_set_buzzer_on";
-    this.Cmd["natural_speed"] = hass.states[entityId].attributes['natural_speed']?"xiaomi_miio_set_natural_mode_off":"xiaomi_miio_set_natural_mode_on";
   }
-  _setService(entityId,hass,service){
-    hass.callService('fan', this.Cmd[service], {
-      entity_id: entityId
-    });
+  onMouseMove (e) {
+    let state = this.hass.states[this.config.entity].state
+    if(state=="on" && this.over){
+      e.preventDefault();
+    }
+    if ( this.x0 !== false ) {
+      let value = this.getValue( e );
+      this.speedvalue=value;
+    }
   }
+
+  onMouseDown(e){
+    const target = e.target;
+    const card = e.currentTarget.parentNode.parentNode.parentNode.parentNode;
+    let c = card.getBoundingClientRect().width/2
+    this.x0 = card.getBoundingClientRect().right-c;
+    this.y0 = card.getBoundingClientRect().bottom-c;
+    let value = this.getValue(e);
+    // this.updatevalue( value );
+    this.speedvalue=value;
+  }
+  onMouseUp(e) {
+    let v = this.speedvalue;
+    let state = this.hass.states[this.config.entity].state
+    if(this.x0 && state=="on"){
+        this.hass.callService('fan', 'set_speed', {
+          entity_id: this.config.entity,
+          speed: Math.floor(this.speedvalue*100)
+        });
+    }
+    this.x0 = false;
+    this.to = setTimeout(() => {this.over=false},2000)
+  }
+
+  getValue ( e ) {
+		var x, y, result, a;
+		x = !! e.touches ? e.touches[ 0 ].clientX : e.clientX;
+		y = !! e.touches ? e.touches[ 0 ].clientY : e.clientY;
+		x = x - this.x0;
+		y = - y + this.y0;
+		a = Math.atan( y / x ) + Math.PI / 2;
+		result = x < 0 ? Math.PI + a : a;
+		result /= 2 * Math.PI;
+		result = 1 - result;
+		return result;
+  }
+  
   fire(type, detail, options) {
   
     options = options || {}
@@ -251,429 +447,9 @@ class FanXiaomi extends HTMLElement {
     this.dispatchEvent(e)
     return e
   }
-  setConfig(config) {
-    // if (!config.entity) {
-    //   throw new Error('你需要定义一个实体');
-    // }
-    this.config = config;
-  }
-  
-  onMouseMove ( e, that ) {
-    e.preventDefault();
-    if ( that.x0 !== false ) {
-      let value = that.getValue( e );
-      that.update( value );
-    }
-  }
-  onMouseDown (  e, that ) {
-    // this.querySelector('#speed').style.strokeWidth = 10
-    that.card.getBoundingClientRect();
-    let c = that.card.getBoundingClientRect().width/2
-    that.x0 = that.card.getBoundingClientRect().right-c;
-    that.y0 = that.card.getBoundingClientRect().bottom-c;
-    let value = that.getValue( e );
-    that.update( value );
-  }
-
-  onMouseUp ( e, that ) {
-    if(that.x0){
-        that.flag = false;
-        let entity = that.config.entity;
-        that._hass.callService('fan', 'set_speed', {
-            entity_id: entity,
-            speed: that.value
-          });
-        if (that._timeoutHandlerMode) clearTimeout(that._timeoutHandlerMode);
-        that._timeoutHandlerMode = setTimeout(() => {
-            that.flag = true;
-        }, 5 * 1000);
-    }
-    that.x0 = false;
-    // this.querySelector('#speed').style.strokeWidth = 10
-  }
-  update ( v ) {
-		this.computeValue( v );
-    // this.temptext.textContent = this.value;
-  }
-  computeValue ( v ) {
-		this.querySelector('#speed').style.strokeDashoffset = ( (1-v) * Math.PI*340 ).toString();
-		let value = v * ( this.max - this.min ) + this.min;
-        let step = 1, val = value, m = 0;
-        
-		//Convert to integers to avoid floating point operation issues.
-		if ( val !== parseInt( val ) || step !== parseInt( step ) ) {
-			while ( val !== parseInt( val ) || step !== parseInt( step ) ) {
-				val *= 10;
-				step *= 10;
-				m++;
-				if ( m > 5 ) {//Not much sense to go further of even 2 actually.. ?
-					val = parseInt( val );
-					step = parseInt( step );
-				}
-			}
-        }
-        
-		value = ( val - val % step ) / Math.pow( 10, m );
-		this.value = value;
-  }
-  setValue ( v ) {
-    if(this.flag){
-        v = ( v - this.min ) / ( this.max - this.min );
-        this.update( v );
-    }
-  };
-  getValue ( e ) {
-		var x, y, result, a;
-		x = !! e.touches ? e.touches[ 0 ].clientX : e.clientX;
-		y = !! e.touches ? e.touches[ 0 ].clientY : e.clientY;
-		x = x - this.x0;
-		y = - y + this.y0;
-		a = Math.atan( y / x ) + Math.PI / 2;
-		result = x < 0 ? Math.PI + a : a;
-		result /= 2 * Math.PI;
-		result = 1 - result;
-		return result;
-	}
-
-/*********************************** UI设置 ************************************/
-getUI() {
-
-  let csss='';
-  for(var i=1;i<73;i++){
-    csss+='.ang'+i+` {
-        transform: rotate(`+(i-1)*5+`deg);
-    }`
-  }
-  let fans='';
-  for(var i=1;i<73;i++){
-    fans+=`<div class="fan ang`+i+`"></div>`
-  }
-  let fan1s='';
-  for(var i=1;i<73;i+=2){
-    fan1s+=`<div class="fan1 ang`+i+`"></div>`
-  }
-  let fanbox = document.createElement('ha-card')
-  fanbox.id = 'fan'
-  fanbox.innerHTML = `
-<style>
-#aspect-ratio {
-  position: relative;
-  width: `+100*(this.config.aspect_ratio||1)+`%;
-}
-#aspect-ratio::before {
-  content: "";
-  display: block;
-  padding-bottom: 100%;
-  
-}
-#aspect-ratio>:first-child {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  background: `+(this.config.background_color||'')+`;
-}
-#container{
-  height: 100%;
-  width: 100%;
-  display: flex;
-  overflow: hidden;
-}
-.c_icon {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  right: 0;
-  z-index: 25;
-  
-}
-.c_icon.active{
-  color:var(--paper-item-icon-active-color);
-  fill:var(--paper-item-icon-active-color);
-}
-.c_icon #oc{
-  stroke:var(--primary-text-color)
-}
-.c_icon.active #oc{
-  stroke:var(--paper-item-icon-active-color);
-}
-.buttons{
-  position: absolute;
-  bottom: 0;
-  display: flex;
-  justify-content:center;
-  width: 80%;
-  margin: 0 10%;
-}
-.buttons>*{
-  position: relative;
-}
-.offline{opacity:0.5}
-.icon{overflow:hidden;width:2em;height:2em;vertical-align:-.15em;fill:gray}
-.fan-xiaomi-panel{position:absolute;top:0;width:100%;text-align:center}
-p{margin:0;padding:0}
-.title{margin-top:20px;height:35px;cursor:pointer}
-.title p{margin:0;padding:0;font-weight:700;font-size:18px}
-.title span{font-size:9pt}
-.attr-row{display:flex}
-.attr-row .attr{width:100%}
-.attr-row .attr-title{font-size:9pt}
-.attr-row .attr-value{font-size:14px}
-.attr-row .attr:nth-child(2){border-right:1px solid #01be9e;border-left:1px solid #01be9e}
-.op-row{display:flex;padding:10px;border-top:3px solid #717376!important}
-.op-row .op{width:100%}
-.op-row .op button{outline:0;border:none;background:0 0;cursor:pointer}
-.op-row .op .icon-waper{display:block;margin-bottom:5px;width:30px;height:30px}
-.op-row .op.active button{color:#01be9e!important;text-shadow:0 0 10px #01be9e}
-`+csss+`
-.fanbox{position:relative;margin:13%;width: 74%; height: 74%;border-radius:50%;background:#80808061}
-.fanbox.active.oscillat{animation:oscillate 8s infinite linear}
-.fanbox.active.oscillat30{animation:oscillate30 8s infinite linear}
-.fanbox.active.oscillat60{animation:oscillate60 8s infinite linear}
-.fanbox.active.oscillat90{animation:oscillate90 8s infinite linear}
-.fanbox.active.oscillat120{animation:oscillate120 8s infinite linear}
-.blades div{position:absolute;margin:15% 0 0 15%;width:35%;height:35%;border-radius:100% 50% 0;background:#989898;transform-origin:100% 100%}
-.blades{width:100%;height:100%}
-.fanbox.active .blades{transform-origin:50% 50%;animation:blades 3s infinite linear;transform-box:fill-box!important}
-.fan{top:0;transform-origin:0 250%}
-.fan,.fan1{position:absolute;left:0;margin-left:50%;width:1%;height:20%;background:#fff}
-.fan1{top:20%;transform-origin:0 150%}
-.c1{top:20%;left:20%;width:60%;height:60%;border:2px solid #fff;border-radius:50%;cursor:pointer;baskground:#ffffff00}
-.c1,.c2{position:absolute;box-sizing:border-box}
-.c2{top:-1%;left:-1%;width:102%;height:102%;border:10px solid #f7f7f7;border-radius:50%;background: #ffffff01;}
-.c3{position:absolute;top:40%;left:40%;box-sizing:border-box;width:20%;height:20%;border-radius:50%;background:#fff;color:#ddd}
-.c3.active{border:2px solid #8dd5c3}
-.c3 ha-icon{
-  width: 80%;
-  height: 80%;
-  outline: none;
-  --mdc-icon-size: 100%;
-  top: 10%;
-  right: 10%;
 }
 
-#speedsvg {
-  position:absolute;
-  top: 0;
-}
-.c1 .wrapper{
-  width: calc(50% + 2px);
-  height: calc(100% + 4px);
-  position: absolute;
-  top:-2px;
-  overflow: hidden;
-}
-.c1 .rightc{
-  right:-2px;
-}
-.c1 .leftc{
-  left:-2px;
-}
-.c1 .circle{
-  width: 200%;
-  height: 100%;
-  box-sizing:border-box;
-  border:2px solid transparent;
-  border-radius: 50%;
-  position: absolute;
-  top:0;
-  transform : rotate(-135deg);
-}
-.c1 .rightcircle{
-  border-top:2px solid #63ff69;
-  border-right:2px solid #63ff69;
-  right:0;
-
-}
-.c1 .leftcircle{
-  border-bottom:2px solid #63ff69;
-  border-left:2px solid #63ff69;
-  left:0;
-
-}
-.c1 .battery_charge{
-  -webkit-animation: battery_charge 2s linear infinite;
-}
-.name {
-  width: 100%;
-  position: absolute;
-  bottom: 0px;
-  margin-bottom: 5px;
-  text-align: center;
-  opacity: 0.5;
-}
-.chevron{position: absolute;
-  top: calc(50% - 20px);
-  height: 40px;
-  width: 40px;
-  color: var(--header-color);
-  z-index:100;
-}
-.speed{position: absolute;
-  left: calc(50% - 20px);
-  height: 40px;
-  width: 40px;
-  color: var(--header-color);
-  z-index:100;
-}
-.show{display: block;}
-.hidden{display: none;}
-#buttons.show{display: flex;}
-#buttons ha-icon-button ,#buttons mwc-icon-button{
-  --mdc-icon-button-size: 32px;
-}
-#buttons tspan{
-  text-anchor: middle;
-  font-family: Helvetica, sans-serif;
-  alignment-baseline: central;
-  dominant-baseline: central;
-  font-size: 10px;
-}
-.chevron.left{left: 0;border-radius:20px;--mdc-icon-button-size: 40px;}
-.chevron.right{right: 0;border-radius:20px;--mdc-icon-button-size: 40px;}
-
-.speed.top{top: 0;border-radius:20px;}
-.speed.bottom{bottom: 0;border-radius:20px;}
-
-.state{
-  display: none;
-}
-.state.show{
-  display: block;
-}
-@-webkit-keyframes circle_right{
-  0%{
-      -webkit-transform: rotate(-135deg);
-  }
-  50%,100%{
-      -webkit-transform: rotate(45deg);
-  }
-}
-@-webkit-keyframes circle_left{
-  0%,50%{
-      -webkit-transform: rotate(-135deg);
-  }
-  100%{
-      -webkit-transform: rotate(45deg);
-  }
-}
-
-@-webkit-keyframes battery_charge{
-  50%{
-    opacity:1;
-}
-  0%,100%{
-    opacity:0;
-}
-}
-
-@keyframes blades{0%{transform:translate(0,0) rotate(0)}
-to{transform:translate(0,0) rotate(3600deg)}
-}
-@keyframes oscillate{0%{transform:perspective(10em) rotateY(0)}
-25%{transform:perspective(10em) rotateY(40deg)}
-50%{transform:perspective(10em) rotateY(0)}
-75%{transform:perspective(10em) rotateY(-40deg)}
-100%{transform:perspective(10em) rotateY(0)}
-}
-@keyframes oscillate30{0%{transform:perspective(10em) rotateY(0)}
-25%{transform:perspective(10em) rotateY(10deg)}
-50%{transform:perspective(10em) rotateY(0)}
-75%{transform:perspective(10em) rotateY(-10deg)}
-100%{transform:perspective(10em) rotateY(0)}
-}
-@keyframes oscillate60{0%{transform:perspective(10em) rotateY(0)}
-25%{transform:perspective(10em) rotateY(20deg)}
-50%{transform:perspective(10em) rotateY(0)}
-75%{transform:perspective(10em) rotateY(-20deg)}
-100%{transform:perspective(10em) rotateY(0)}
-}
-@keyframes oscillate90{0%{transform:perspective(10em) rotateY(0)}
-25%{transform:perspective(10em) rotateY(30deg)}
-50%{transform:perspective(10em) rotateY(0)}
-75%{transform:perspective(10em) rotateY(-30deg)}
-100%{transform:perspective(10em) rotateY(0)}
-}
-@keyframes oscillate120{0%{transform:perspective(10em) rotateY(0)}
-25%{transform:perspective(10em) rotateY(40deg)}
-50%{transform:perspective(10em) rotateY(0)}
-75%{transform:perspective(10em) rotateY(-40deg)}
-100%{transform:perspective(10em) rotateY(0)}
-}
-
-</style>
-    <div id="container">
-      <div class="fanbox">
-        <div class="blades ">
-          <div class="b1 ang1"></div>
-          <div class="b2 ang25"></div>
-          <div class="b3 ang49"></div>
-        </div>
-        `+fans+fan1s+`
-         <div class="c2"></div>
-        <div class="c3">
-            <ha-icon id="power" icon="mdi:power" class="c_icon state show" role="button" tabindex="0" aria-disabled="false"></ha-icon>
-            <ha-icon id="direct" icon="mdi:weather-windy" class="c_icon state" role="button" tabindex="0" aria-disabled="false"></ha-icon>
-            <ha-icon id="natural" icon="mdi:leaf" class="c_icon state" role="button" tabindex="0" aria-disabled="false"></ha-icon>
-        </div>
-        <div class="c1">
-          <div class="wrapper rightc">
-            <div class="circle rightcircle"></div>
-          </div>
-          <div class="wrapper leftc">
-            <div class="circle leftcircle"></div>
-          </div>
-        </div>
-        <svg id="speedsvg" class="hidden" width="100%" height="100%" viewBox="0 0 400 400"><circle id="speed" cx="200" cy="200" r="170" fill="none" class="grab" style="stroke: var(--paper-item-icon-active-color); fill: none; stroke-width: 8; stroke-dasharray: 1068.14; transform: rotate(90deg); transform-origin: 50% 50%; stroke-dashoffset: 44.329;"></circle></svg>
-      </div>
-    </div>
-    <div class="chevron left hidden">
-      <ha-icon-button icon="mdi:chevron-left" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
-    </div>
-    <div class="chevron right hidden">
-      <ha-icon-button icon="mdi:chevron-right" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
-    </div>
-    <div class="speed top hidden">
-      <ha-icon-button icon="mdi:chevron-double-up" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
-    </div>
-    <div class="speed bottom hidden">
-      <ha-icon-button icon="mdi:chevron-down" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
-    </div>
-    <div class="prop">
-      <ha-icon-button id="more" icon="mdi:dots-vertical" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
-    </div>
-    <div id="buttons" class="buttons hidden">
-      <ha-icon-button id="lock" icon="hass:lock" class="c_icon" role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
-      <mwc-icon-button id="oscillate" class="c_icon ">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-          <path d="M4,6l1,-6l5,6.5z"></path>
-          <path id="oc" d="M3,7A 10 10, 0, 1, 0, 5.5 4," fill="none" style="stroke-width: 2"></path>
-          <text  x="12" y="12">
-            <tspan id="angle">120</tspan>
-          </text>
-        </svg>
-      </mwc-icon-button>
-      <ha-icon-button id="bnatural" icon="mdi:leaf" class="c_icon " role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
-      <ha-icon-button id="buzzer" icon="mdi:surround-sound" class="c_icon " role="button" tabindex="0" aria-disabled="false"></ha-icon-button>
-    </div>
-    <div class="header" style="font-size: 9px;">   
-        <div class="name">
-          <span class="ellipsis show" style="">衣帽间</span>
-        </div>
-    </div>
-</div>
-`
-  return fanbox
-}
-
-// 加入日志开关
-log() {
-  // console.log(...arguments)
-}
-}
-
-customElements.define('fan-xiaomi', FanXiaomi);
+customElements.define('fan-xiaomi', FanXiaomiCard);
 
 export class FanXiaomiCardEditor extends LitElement {
   setConfig(config) {
@@ -697,12 +473,12 @@ export class FanXiaomiCardEditor extends LitElement {
           @value-changed="${this._valueChanged}"
       ></paper-input>
       <div class="side-by-side">
-        <paper-input
-          label="${this.hass.localize("ui.panel.lovelace.editor.card.generic.aspect_ratio")} (${this.hass.localize("ui.panel.lovelace.editor.card.config.optional")})"
-          .value="${this.config.aspect_ratio}"
-          .configValue="${"aspect_ratio"}"
-          @value-changed="${this._valueChanged}"
-        ></paper-input>
+        <paper-input-container>
+            <label slot="label">${this.hass.localize("ui.panel.lovelace.editor.card.generic.aspect_ratio")} (${this.hass.localize("ui.panel.lovelace.editor.card.config.optional")}) ${this.config.aspect_ratio?this.config.aspect_ratio:1}</label>
+            
+            <input type="range" class="aspect_ratio" value="${this.config.aspect_ratio?this.config.aspect_ratio:1}" min="0.3" max="1.0" step="0.01" slot="input" .configValue="${"aspect_ratio"}" @input="${this._valueChanged}">
+        </paper-input-container>
+
         <paper-input-container>
             <label slot="label">背景颜色</label>
             <input type="color" value="${this.config.background_color?this.config.background_color:""}" slot="input" .configValue="${"background_color"}" @input="${this._valueChanged}">
@@ -749,6 +525,14 @@ export class FanXiaomiCardEditor extends LitElement {
       }
       .fs{
           flex:0.3;
+      }
+      .aspect_ratio{
+        appearance: slider-horizontal;
+        color: rgb(16, 16, 16);
+        cursor: default;
+        padding: initial;
+        border: initial;
+        margin: 2px;
       }
     `
   }
