@@ -4,11 +4,11 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-08-01 23:31:42
+ * @LastEditTime  : 2020-08-04 11:13:53
  */
 
-console.info("%c Xiaomi Fan Card \n%c  Version  1.3.0 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
-import(`https://unpkg.com/@material/mwc-slider@0.17.2/mwc-slider.js?module`);
+console.info("%c Xiaomi Fan Card \n%c  Version  1.3.1 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+
 const LitElement = Object.getPrototypeOf(
   customElements.get("ha-panel-lovelace")
 );
@@ -19,13 +19,16 @@ export class FanXiaomiCard extends LitElement {
   setConfig(config) {
     this.config = config;
   }
-
+  constructor() {
+    super();
+    this._timer1 = null;
+    this._timer2 = null;
+  }
   static get properties() {
       return {
           hass: {},
           config: {},
           over:false,
-          to:{},
           x0:false,
           y0:false,
           speedvalue:0
@@ -55,7 +58,6 @@ export class FanXiaomiCard extends LitElement {
     <div id="aspect-ratio" 
       style="width:${100*this.config.aspect_ratio||100}%" 
       class="${state.state=='unavailable'||state.state.state=='unavailable'?'offline':''}" 
-      @touchstart="${clearTimeout(this.to)}"
       @mouseout="${function(){this.over=false}}" 
       @mouseover="${function(){this.over=true}}" 
       @mousemove="${this.onMouseMove}"
@@ -106,7 +108,8 @@ export class FanXiaomiCard extends LitElement {
         <div class="prop">
           <ha-icon-button id="more" icon="mdi:dots-vertical" class="c_icon" role="button" tabindex="0" aria-disabled="false" .cmd="${'more'}" @click=${this._action}></ha-icon-button>
         </div>
-        <div id="buttons" class="${this.over?'show':'hidden'}">
+        
+        <div id="buttons" class="${this.over?'show':'hidden'}" style="background:${this.config.background_color||'var(--card-background-color)'}">
           <ha-icon-button id="lock" icon="hass:lock" class="c_icon ${attrs['child_lock']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'lock'}" @click=${this._action}></ha-icon-button>
           <mwc-icon-button id="oscillate" class="c_icon ${attrs['oscillate']?"active":""}" .cmd="${'oscillate'}" @click=${this._action}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -120,6 +123,17 @@ export class FanXiaomiCard extends LitElement {
           <ha-icon-button id="bnatural" icon="mdi:leaf" class="c_icon ${attrs['natural_speed']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'natural_speed'}" @click=${this._action}></ha-icon-button>
           <ha-icon-button id="buzzer" icon="mdi:surround-sound" class="c_icon ${attrs['buzzer']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'buzzer'}" @click=${this._action}></ha-icon-button>
         </div>
+        <ha-slider
+          id="angleslider" 
+          class="hidden" 
+          pin 
+          markers 
+          max="140" 
+          value="${attrs['oscillate']?attrs['angle']==118?"120":attrs['angle']:"0"}" 
+          step="30" 
+          style="background:${this.config.background_color||'var(--card-background-color)'}" 
+          @change=${this._changAngle}
+        ></ha-slider>
         <div class="header" style="font-size: 9px;" class="${this.over?'hidden':'show'}">   
             <div class="name">
               <span class="ellipsis show" style="">${this.config.name}</span>
@@ -135,12 +149,13 @@ export class FanXiaomiCard extends LitElement {
     #aspect-ratio::before {content: "";display: block;padding-bottom: 100%;}
     #aspect-ratio>:first-child {position: absolute;top: 0;left: 0;height: 100%;width: 100%;}
     #container{height: 100%;width: 100%;display: flex;overflow: hidden;}
-    #buttons{position: absolute;bottom: 0;justify-content:center;width: 80%;margin: 0 10%;}
+    #buttons{position: absolute;bottom: 0;justify-content:center;width: calc( 100% - 20px );margin: 0 10px;}
     #buttons>*{position: relative;}
     #buttons.show{display: flex;}
     #buttons ha-icon-button ,#buttons mwc-icon-button{--mdc-icon-button-size: 32px; }
     #buttons tspan{text-anchor: middle;font-family: Helvetica, sans-serif;alignment-baseline: central;dominant-baseline: central;font-size: 10px;}
-    #speedsvg {position:absolute;top: 0;}
+    #angleslider{position: absolute;bottom: 0;width: calc( 100% - 20px );margin: 0 10px;z-index: 25;}
+    #speedsvg {position: absolute;bottom: 0;width: calc( 100% - 20px );margin: 0 10px;}
 
     .c_icon {position: absolute;cursor: pointer;top: 0;right: 0;z-index: 25;}
     .c_icon.active{color:var(--paper-item-icon-active-color);fill:var(--paper-item-icon-active-color);}
@@ -322,6 +337,27 @@ export class FanXiaomiCard extends LitElement {
   _mouseover(e){
     this.over=true;
   }
+  _changAngle(e){
+    clearTimeout(this._timer2);
+    const target = e.target;
+    let attr = this.hass.states[this.config.entity].attributes
+    attr['angle'] = "^_^"
+    if(target.ariaValueNow){
+      this.hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
+        entity_id: this.config.entity,
+        angle: target.ariaValueNow
+      })
+    }else{
+      this.hass.callService('fan', 'oscillate', {
+        entity_id: this.config.entity,
+        oscillating: false
+      });
+    }
+    this._timer2 = setTimeout(() => {
+      target.classList.add("hidden")
+    },1500)
+    
+  }
   _action(e){
     const target = e.target;
     
@@ -358,30 +394,19 @@ export class FanXiaomiCard extends LitElement {
         direction: 'right'
       });
     }else if(target.cmd == "oscillate"){
-      
+      clearTimeout(this._timer2);
       if(attr['oscillate']){
-        if(attr['angle']<110){
-          this.hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
-            entity_id: this.config.entity,
-            angle: attr['angle']+30
-          });
-        }else{
-          this.hass.callService('fan', 'oscillate', {
-            entity_id: this.config.entity,
-            oscillating: false
-          });
-          this.hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
-            entity_id: this.config.entity,
-            angle: 30
-          });
-        }
+        target.parentNode.nextElementSibling.classList.remove("hidden")
+        this._timer2 = setTimeout(() => {
+          target.parentNode.nextElementSibling.classList.add("hidden")
+        },5000)
       }else{
         this.hass.callService('fan', 'oscillate', {
           entity_id: this.config.entity,
           oscillating: true
         });
+        target.classList.remove("hidden")
       }
-      attr['angle'] = "^_^"
     }else if(target.cmd == "more"){
       this.fire('hass-more-info', { entityId: this.config.entity });
     }
@@ -408,6 +433,7 @@ export class FanXiaomiCard extends LitElement {
     this.speedvalue=value;
   }
   onMouseUp(e) {
+    clearTimeout(this._timer1);
     let v = this.speedvalue;
     let state = this.hass.states[this.config.entity].state
     if(this.x0 && state=="on"){
@@ -417,7 +443,7 @@ export class FanXiaomiCard extends LitElement {
         });
     }
     this.x0 = false;
-    this.to = setTimeout(() => {this.over=false},2000)
+    this._timer1 = setTimeout(() => {this.over=false},5000)
   }
 
   getValue ( e ) {
