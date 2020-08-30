@@ -4,7 +4,7 @@
  * @Description   : 
  * @Date          : 2019-10-13 17:46:58
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-08-01 22:58:48
+ * @LastEditTime  : 2020-08-30 22:39:17
  -->
 # Xiaomi Fan Lovelace Card
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
@@ -20,6 +20,10 @@ Xiaomi Smartmi Fan Lovelace card for HASS/Home Assistant.
   [Xiaomi Mi Smart Pedestal Fan Integration](https://github.com/syssi/xiaomi_fan)
 
 ## Update
+
+### v1.3.1
+  - Optimize the angle adjustment UI
+  - Optimize the UI configuration panel
 ### v1.3.0
  - Rebuild code
  - Optimize and fix multiple logic problems

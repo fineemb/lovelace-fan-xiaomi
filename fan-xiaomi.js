@@ -4,11 +4,11 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-08-04 11:13:53
+ * @LastEditTime  : 2020-08-30 22:40:44
  */
 
 console.info("%c Xiaomi Fan Card \n%c  Version  1.3.1 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
-
+import 'https://unpkg.com/@material/mwc-slider@0.18.0/mwc-slider.js?module'
 const LitElement = Object.getPrototypeOf(
   customElements.get("ha-panel-lovelace")
 );
@@ -123,7 +123,7 @@ export class FanXiaomiCard extends LitElement {
           <ha-icon-button id="bnatural" icon="mdi:leaf" class="c_icon ${attrs['natural_speed']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'natural_speed'}" @click=${this._action}></ha-icon-button>
           <ha-icon-button id="buzzer" icon="mdi:surround-sound" class="c_icon ${attrs['buzzer']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'buzzer'}" @click=${this._action}></ha-icon-button>
         </div>
-        <ha-slider
+        <mwc-slider
           id="angleslider" 
           class="hidden" 
           pin 
@@ -132,8 +132,9 @@ export class FanXiaomiCard extends LitElement {
           value="${attrs['oscillate']?attrs['angle']==118?"120":attrs['angle']:"0"}" 
           step="30" 
           style="background:${this.config.background_color||'var(--card-background-color)'}" 
+          @mousedown=${this._clickSlider}
           @change=${this._changAngle}
-        ></ha-slider>
+        ></mwc-slider>
         <div class="header" style="font-size: 9px;" class="${this.over?'hidden':'show'}">   
             <div class="name">
               <span class="ellipsis show" style="">${this.config.name}</span>
@@ -337,15 +338,20 @@ export class FanXiaomiCard extends LitElement {
   _mouseover(e){
     this.over=true;
   }
+  _clickSlider(e){
+    const target = e.target;
+    clearTimeout(this._timer1)
+    clearTimeout(this._timer2)
+  }
   _changAngle(e){
-    clearTimeout(this._timer2);
+    // clearTimeout(this._timer2);
     const target = e.target;
     let attr = this.hass.states[this.config.entity].attributes
     attr['angle'] = "^_^"
-    if(target.ariaValueNow){
+    if(target.value){
       this.hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
         entity_id: this.config.entity,
-        angle: target.ariaValueNow
+        angle: target.value
       })
     }else{
       this.hass.callService('fan', 'oscillate', {
@@ -356,6 +362,7 @@ export class FanXiaomiCard extends LitElement {
     this._timer2 = setTimeout(() => {
       target.classList.add("hidden")
     },1500)
+    this._timer1 = setTimeout(() => {this.over=false},5000)
     
   }
   _action(e){
