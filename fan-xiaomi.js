@@ -4,10 +4,10 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-08-30 22:40:44
+ * @LastEditTime  : 2020-09-07 01:25:57
  */
 
-console.info("%c Xiaomi Fan Card \n%c  Version  1.3.1 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+console.info("%c Xiaomi Fan Card \n%c  Version  1.3.2 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
 import 'https://unpkg.com/@material/mwc-slider@0.18.0/mwc-slider.js?module'
 const LitElement = Object.getPrototypeOf(
   customElements.get("ha-panel-lovelace")
@@ -54,6 +54,8 @@ export class FanXiaomiCard extends LitElement {
     }
     const state = this.hass.states[this.config.entity];
     const attrs = state.attributes;
+    let nowspeed = attrs['raw_speed'] || attrs['natural_speed'] || attrs['direct_speed']
+    nowspeed = attrs['model']==='dmaker.fan.p5'?nowspeed:nowspeed/10
     return html`
     <div id="aspect-ratio" 
       style="width:${100*this.config.aspect_ratio||100}%" 
@@ -67,7 +69,7 @@ export class FanXiaomiCard extends LitElement {
       <ha-card id="fan" class="${state.state=='on'||state.state.state=='on'?'active':''}" style="background:${this.config.background_color||''}">
         <div id="container">
           <div class="fanbox ${state.state=='on'||state.state.state=='on'?'active':''} ${attrs['oscillate']?"oscillate"+attrs['angle']:""}">
-            <div class="blades" style="animation-duration:${attrs.natural_speed?5-attrs.natural_speed/100*5+1:5-attrs.direct_speed/100*5+1}s">
+            <div class="blades" style="animation-duration:${5-nowspeed/100*5+1}s">
               <div class="b1 ang1"></div>
               <div class="b2 ang25"></div>
               <div class="b3 ang49"></div>
@@ -76,7 +78,7 @@ export class FanXiaomiCard extends LitElement {
             ${fan1s.map(i => html`<div class="fan1 ang${i}"></div>`)}
             <div class="c2"></div>
             <div class="c3">
-                <ha-icon id="power" icon="${state.state=='on'||state.state.state=='on'?(attrs['natural_speed']?'mdi:leaf':'mdi:weather-windy'):'mdi:power'}" class="c_icon state show" role="button" tabindex="0" aria-disabled="false" .cmd="${'toggle'}" @click=${this._action}></ha-icon>
+                <ha-icon id="power" icon="${state.state=='on'||state.state.state=='on'?(attrs['natural_speed'] || attrs['mode']==='nature'?'mdi:leaf':'mdi:weather-windy'):'mdi:power'}" class="c_icon state show" role="button" tabindex="0" aria-disabled="false" .cmd="${'toggle'}" @click=${this._action}></ha-icon>
             </div>
             <div class="c1">
               <div class="wrapper rightc ${attrs['battery_charge']!="complete"?"battery_charge":""} ${attrs['battery']<20?"red":""}">
@@ -94,7 +96,7 @@ export class FanXiaomiCard extends LitElement {
                 r="170" 
                 fill="none" 
                 class="grab" 
-                style="stroke: var(--paper-item-icon-active-color); fill: none; stroke-width: 8; stroke-dasharray: 1068.14; transform: rotate(90deg); transform-origin: 50% 50%; stroke-dashoffset: ${this.speedvalue?(1-this.speedvalue)* Math.PI*340:attrs['natural_speed']?(1-attrs['natural_speed']/100) * Math.PI*340:(1-attrs['direct_speed']/100) * Math.PI*340};"></circle>
+                style="stroke: var(--paper-item-icon-active-color); fill: none; stroke-width: 8; stroke-dasharray: 1068.14; transform: rotate(90deg); transform-origin: 50% 50%; stroke-dashoffset: ${this.speedvalue?(1-this.speedvalue)* Math.PI*340:(1-nowspeed/100) * Math.PI*340};"></circle>
             </svg>
           </div>
         </div>
@@ -111,16 +113,31 @@ export class FanXiaomiCard extends LitElement {
         
         <div id="buttons" class="${this.over?'show':'hidden'}" style="background:${this.config.background_color||'var(--card-background-color)'}">
           <ha-icon-button id="lock" icon="hass:lock" class="c_icon ${attrs['child_lock']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'lock'}" @click=${this._action}></ha-icon-button>
-          <mwc-icon-button id="oscillate" class="c_icon ${attrs['oscillate']?"active":""}" .cmd="${'oscillate'}" @click=${this._action}>
+          <mwc-icon-button class="c_icon ${attrs['delay_off_countdown']?"active":""}" .cmd="${'delay'}" @click=${this._action}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-              <path d="M4,6l1,-6l5,6.5z"></path>
-              <path id="oc" d="M3,7A 10 10, 0, 1, 0, 5.5 4," fill="none" style="stroke-width: 2"></path>
-              <text  x="12" y="12">
-                <tspan id="angle">${attrs['oscillate']?attrs['angle']==118?"120":attrs['angle']:"0"}</tspan>
+            <path d="M12,20A7,7 0 0,1 5,13A7,7 0 0,1 12,6A7,7 0 0,1 19,13A7,7 0 0,1 12,20M12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22A9,9 0 0,0 21,13A9,9 0 0,0 12,4M12.5,8V8M7.88,3.39L6.6,1.86L2,5.71L3.29,7.24L7.88,3.39M22,5.72L17.4,1.86L16.11,3.39L20.71,7.25L22,5.72Z"></path>
+              <text  x="12" y="13">
+                <tspan style="stroke: ${this.config.background_color||'var(--card-background-color)'}; stroke-width: 3;">${attrs['model']==='dmaker.fan.p5'?attrs['delay_off_countdown']:Math.ceil(attrs['delay_off_countdown']/60)}</tspan>
+              </text>
+              <text  x="12" y="13">
+                <tspan>${attrs['model']==='dmaker.fan.p5'?attrs['delay_off_countdown']:Math.ceil(attrs['delay_off_countdown']/60)}</tspan>
               </text>
             </svg>
           </mwc-icon-button>
-          <ha-icon-button id="bnatural" icon="mdi:leaf" class="c_icon ${attrs['natural_speed']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'natural_speed'}" @click=${this._action}></ha-icon-button>
+
+          <mwc-icon-button class="c_icon ${attrs['oscillate']?"active":""}" .cmd="${'oscillate'}" @click=${this._action}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path d="M4,6l1,-6l5,6.5z"></path>
+              <path class="oc" d="M3,7A 10 10, 0, 1, 0, 5.5 4," fill="none" style="stroke-width: 2"></path>
+              <text  x="12" y="12">
+                <tspan style="stroke: ${this.config.background_color||'var(--card-background-color)'}; stroke-width: 3;">${attrs['oscillate']?attrs['angle']==118?"120":attrs['angle']:"0"}</tspan>
+              </text>
+              <text  x="12" y="12">
+                <tspan>${attrs['oscillate']?attrs['angle']==118?"120":attrs['angle']:"0"}</tspan>
+              </text>
+            </svg>
+          </mwc-icon-button>
+          <ha-icon-button id="bnatural" icon="mdi:leaf" class="c_icon ${attrs['natural_speed']?"active":attrs['mode']==='nature'?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'natural_speed'}" @click=${this._action}></ha-icon-button>
           <ha-icon-button id="buzzer" icon="mdi:surround-sound" class="c_icon ${attrs['buzzer']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'buzzer'}" @click=${this._action}></ha-icon-button>
         </div>
         <mwc-slider
@@ -135,6 +152,18 @@ export class FanXiaomiCard extends LitElement {
           @mousedown=${this._clickSlider}
           @change=${this._changAngle}
         ></mwc-slider>
+        <mwc-slider
+          id="delayslider" 
+          class="hidden" 
+          pin 
+          markers 
+          max="480" 
+          value="${attrs['model']==='dmaker.fan.p5'?attrs['delay_off_countdown']:Math.ceil(attrs['delay_off_countdown']/60)}" 
+          step="60" 
+          style="background:${this.config.background_color||'var(--card-background-color)'}" 
+          @mousedown=${this._clickSlider}
+          @change=${this._changDelay}
+        ></mwc-slider>
         <div class="header" style="font-size: 9px;" class="${this.over?'hidden':'show'}">   
             <div class="name">
               <span class="ellipsis show" style="">${this.config.name}</span>
@@ -148,20 +177,20 @@ export class FanXiaomiCard extends LitElement {
     return css `
     #aspect-ratio {position: relative;}
     #aspect-ratio::before {content: "";display: block;padding-bottom: 100%;}
-    #aspect-ratio>:first-child {position: absolute;top: 0;left: 0;height: 100%;width: 100%;}
+    #aspect-ratio>:first-child {position: absolute;top: 0;left: 0;height: 100%;width: 100%; overflow: hidden;}
     #container{height: 100%;width: 100%;display: flex;overflow: hidden;}
     #buttons{position: absolute;bottom: 0;justify-content:center;width: calc( 100% - 20px );margin: 0 10px;}
     #buttons>*{position: relative;}
     #buttons.show{display: flex;}
     #buttons ha-icon-button ,#buttons mwc-icon-button{--mdc-icon-button-size: 32px; }
     #buttons tspan{text-anchor: middle;font-family: Helvetica, sans-serif;alignment-baseline: central;dominant-baseline: central;font-size: 10px;}
-    #angleslider{position: absolute;bottom: 0;width: calc( 100% - 20px );margin: 0 10px;z-index: 25;}
+    #angleslider,#delayslider{position: absolute;bottom: 0;width: calc( 100% - 20px );margin: 0 10px;z-index: 25;}
     #speedsvg {position: absolute;bottom: 0;width: calc( 100% - 20px );margin: 0 10px;}
 
     .c_icon {position: absolute;cursor: pointer;top: 0;right: 0;z-index: 25;}
     .c_icon.active{color:var(--paper-item-icon-active-color);fill:var(--paper-item-icon-active-color);}
-    .c_icon #oc{stroke:var(--primary-text-color)}
-    .c_icon.active #oc{stroke:var(--paper-item-icon-active-color);}
+    .c_icon .oc{stroke:var(--primary-text-color)}
+    .c_icon.active .oc{stroke:var(--paper-item-icon-active-color);}
 
     .offline{opacity:0.5}
     .ang1 {transform: rotate(0deg)}.ang2 {transform: rotate(5deg)}.ang3 {transform: rotate(10deg)}.ang4 {transform: rotate(15deg)}.ang5 {transform: rotate(20deg)}.ang6 {transform: rotate(25deg)}.ang7 {transform: rotate(30deg)}.ang8 {transform: rotate(35deg)}.ang9 {transform: rotate(40deg)}.ang10 {transform: rotate(45deg)}.ang11 {transform: rotate(50deg)}.ang12 {transform: rotate(55deg)}.ang13 {transform: rotate(60deg)}.ang14 {transform: rotate(65deg)}.ang15 {transform: rotate(70deg)}.ang16 {transform: rotate(75deg)}.ang17 {transform: rotate(80deg)}.ang18 {transform: rotate(85deg)}.ang19 {transform: rotate(90deg)}.ang20 {transform: rotate(95deg)}.ang21 {transform: rotate(100deg)}.ang22 {transform: rotate(105deg)}.ang23 {transform: rotate(110deg)}.ang24 {transform: rotate(115deg)}.ang25 {transform: rotate(120deg)}.ang26 {transform: rotate(125deg)}.ang27 {transform: rotate(130deg)}.ang28 {transform: rotate(135deg)}.ang29 {transform: rotate(140deg)}.ang30 {transform: rotate(145deg)}.ang31 {transform: rotate(150deg)}.ang32 {transform: rotate(155deg)}.ang33 {transform: rotate(160deg)}.ang34 {transform: rotate(165deg)}.ang35 {transform: rotate(170deg)}.ang36 {transform: rotate(175deg)}.ang37 {transform: rotate(180deg)}.ang38 {transform: rotate(185deg)}.ang39 {transform: rotate(190deg)}.ang40 {transform: rotate(195deg)}.ang41 {transform: rotate(200deg)}.ang42 {transform: rotate(205deg)}.ang43 {transform: rotate(210deg)}.ang44 {transform: rotate(215deg)}.ang45 {transform: rotate(220deg)}.ang46 {transform: rotate(225deg)}.ang47 {transform: rotate(230deg)}.ang48 {transform: rotate(235deg)}.ang49 {transform: rotate(240deg)}.ang50 {transform: rotate(245deg)}.ang51 {transform: rotate(250deg)}.ang52 {transform: rotate(255deg)}.ang53 {transform: rotate(260deg)}.ang54 {transform: rotate(265deg)}.ang55 {transform: rotate(270deg)}.ang56 {transform: rotate(275deg)}.ang57 {transform: rotate(280deg)}.ang58 {transform: rotate(285deg)}.ang59 {transform: rotate(290deg)}.ang60 {transform: rotate(295deg)}.ang61 {transform: rotate(300deg)}.ang62 {transform: rotate(305deg)}.ang63 {transform: rotate(310deg)}.ang64 {transform: rotate(315deg)}.ang65 {transform: rotate(320deg)}.ang66 {transform: rotate(325deg)}.ang67 {transform: rotate(330deg)}.ang68 {transform: rotate(335deg)}.ang69 {transform: rotate(340deg)}.ang70 {transform: rotate(345deg)}.ang71 {transform: rotate(350deg)}.ang72 {transform: rotate(355deg)}
@@ -274,6 +303,10 @@ export class FanXiaomiCard extends LitElement {
     .state.show{
       display: block;
     }
+    mwc-slider.hidden{
+      display: block;
+      left: 100%;
+    }
     @-webkit-keyframes circle_right{
       0%{
           -webkit-transform: rotate(-135deg);
@@ -342,6 +375,22 @@ export class FanXiaomiCard extends LitElement {
     const target = e.target;
     clearTimeout(this._timer1)
     clearTimeout(this._timer2)
+    clearTimeout(this._timer3)
+  }
+  _changDelay(e){
+
+    const target = e.target;
+    let attr = this.hass.states[this.config.entity].attributes
+    attr['delay_off_countdown'] = "^_^"
+    this.hass.callService('fan', 'xiaomi_miio_set_delay_off', {
+      entity_id: this.config.entity,
+      delay_off_countdown: target.value
+    })
+    this._timer3 = setTimeout(() => {
+      target.classList.add("hidden")
+    },1500)
+    this._timer1 = setTimeout(() => {this.over=false},5000)
+    
   }
   _changAngle(e){
     // clearTimeout(this._timer2);
@@ -383,7 +432,7 @@ export class FanXiaomiCard extends LitElement {
         entity_id: this.config.entity
       });
     }else if(target.cmd == "natural_speed" && state=="on"){
-      this.hass.callService('fan', attr['natural_speed']?"xiaomi_miio_set_natural_mode_off":"xiaomi_miio_set_natural_mode_on", {
+      this.hass.callService('fan', attr['natural_speed'] || attr['mode']==='nature'?"xiaomi_miio_set_natural_mode_off":"xiaomi_miio_set_natural_mode_on", {
         entity_id: this.config.entity
       });
     }else if(target.cmd == "lock"){
@@ -403,9 +452,9 @@ export class FanXiaomiCard extends LitElement {
     }else if(target.cmd == "oscillate"){
       clearTimeout(this._timer2);
       if(attr['oscillate']){
-        target.parentNode.nextElementSibling.classList.remove("hidden")
+        target.parentNode.parentNode.querySelector("#angleslider").classList.remove("hidden")
         this._timer2 = setTimeout(() => {
-          target.parentNode.nextElementSibling.classList.add("hidden")
+          target.parentNode.parentNode.querySelector("#angleslider").classList.add("hidden")
         },5000)
       }else{
         this.hass.callService('fan', 'oscillate', {
@@ -414,6 +463,12 @@ export class FanXiaomiCard extends LitElement {
         });
         target.classList.remove("hidden")
       }
+    }else if(target.cmd == "delay"){
+      clearTimeout(this._timer3);
+      target.parentNode.parentNode.querySelector("#delayslider").classList.remove("hidden")
+      this._timer2 = setTimeout(() => {
+        target.parentNode.parentNode.querySelector("#delayslider").classList.add("hidden")
+      },5000)
     }else if(target.cmd == "more"){
       this.fire('hass-more-info', { entityId: this.config.entity });
     }
