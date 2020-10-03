@@ -4,16 +4,17 @@
  * @Description   : 
  * @Date          : 2019-10-12 02:38:30
  * @LastEditors   : fineemb
- * @LastEditTime  : 2020-09-07 01:25:57
+ * @LastEditTime  : 2020-10-03 17:15:34
  */
 
-console.info("%c Xiaomi Fan Card \n%c  Version  1.3.2 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+console.info("%c Xiaomi Fan Card \n%c  Version  1.3.3 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
 import 'https://unpkg.com/@material/mwc-slider@0.18.0/mwc-slider.js?module'
 const LitElement = Object.getPrototypeOf(
   customElements.get("ha-panel-lovelace")
 );
 const html = LitElement.prototype.html;
 const css = LitElement.prototype.css;
+const includeDomains = ["fan"];
 
 export class FanXiaomiCard extends LitElement {
   setConfig(config) {
@@ -541,7 +542,11 @@ customElements.define('fan-xiaomi', FanXiaomiCard);
 
 export class FanXiaomiCardEditor extends LitElement {
   setConfig(config) {
-      this.config = config;
+    const preloadCard = type => window.loadCardHelpers()
+      .then(({ createCardElement }) => createCardElement({type}))
+    preloadCard("weather-forecast");
+    customElements.get("hui-weather-forecast-card").getConfigElement();
+    this.config = config;
   }
 
   static get properties() {
@@ -573,16 +578,20 @@ export class FanXiaomiCardEditor extends LitElement {
             <ha-icon-button slot="suffix" icon="${this.config.background_color?"mdi:palette":"mdi:palette-outline"}" title="${this.hass.localize("ui.panel.lovelace.editor.card.map.delete")}" .type="${"background_color"}" @click=${this._delEntity}></ha-icon-button>
         </paper-input-container>
       </div>
-      <paper-input-container >
-          <label slot="label">${this.hass.localize("ui.panel.lovelace.editor.card.entities.name")}</label>
-          <input type="text" value="${this.config.entity}" slot="input" list="entitieslist" autocapitalize="none" .configValue="${"entity"}" @change=${this._valueChanged} @focus=${this._focusEntity}>
-      </paper-input-container>
+      <ha-entity-picker
+        .label="${this.hass.localize(
+          "ui.panel.lovelace.editor.card.generic.entity"
+        )} (${this.hass.localize(
+          "ui.panel.lovelace.editor.card.config.required"
+        )})"
+        .hass=${this.hass}
+        .value=${this.config.entity}
+        .configValue=${"entity"}
+        .includeDomains=${includeDomains}
+        @change=${this._valueChanged}
+        allow-custom-entity
+      ></ha-entity-picker>
     </div>
-    <datalist id="entitieslist">
-        ${Object.keys(this.hass.states).filter(a => fanRE.test(a) ).map(entId => html`
-            <option value=${entId}>${this.hass.states[entId].attributes.friendly_name || entId}</option>
-        `)}
-    </datalist>
     `
   }
   static get styles() {

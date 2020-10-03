@@ -1,8 +1,11 @@
 
+
 # Xiaomi Fan Lovelace Card
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
 
 Xiaomi Smartmi Fan Lovelace card for HASS/Home Assistant.
+
+<a href="https://www.buymeacoffee.com/fineemb" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
 ## Features
 +  This card plug-in is based on CSS implementation and is used for HASS, Supports [HACS](https://github.com/custom-components/hacs) installation
