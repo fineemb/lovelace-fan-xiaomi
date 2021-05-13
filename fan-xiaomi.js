@@ -7,7 +7,7 @@
  * @LastEditTime  : 2020-10-03 17:15:34
  */
 
-console.info("%c Xiaomi Fan Card \n%c  Version  1.3.3 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+console.info("%c Xiaomi Fan Card \n%c  Version  1.3.4 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
 import 'https://unpkg.com/@material/mwc-slider@0.18.0/mwc-slider.js?module'
 const LitElement = Object.getPrototypeOf(
   customElements.get("ha-panel-lovelace")
@@ -56,7 +56,7 @@ export class FanXiaomiCard extends LitElement {
     const state = this.hass.states[this.config.entity];
     const attrs = state.attributes;
     let nowspeed = attrs['raw_speed'] || attrs['natural_speed'] || attrs['direct_speed']
-    nowspeed = attrs['model']==='dmaker.fan.p5'?nowspeed:nowspeed/10
+    nowspeed = attrs['model']==='dmaker.fan.p5'?attrs['percentage'] :nowspeed/10
     return html`
     <div id="aspect-ratio" 
       style="width:${100*this.config.aspect_ratio||100}%" 
@@ -383,7 +383,7 @@ export class FanXiaomiCard extends LitElement {
     const target = e.target;
     let attr = this.hass.states[this.config.entity].attributes
     attr['delay_off_countdown'] = "^_^"
-    this.hass.callService('fan', 'xiaomi_miio_set_delay_off', {
+    this.hass.callService('xiaomi_miio_fan', 'fan_set_delay_off', {
       entity_id: this.config.entity,
       delay_off_countdown: target.value
     })
@@ -399,7 +399,7 @@ export class FanXiaomiCard extends LitElement {
     let attr = this.hass.states[this.config.entity].attributes
     attr['angle'] = "^_^"
     if(target.value){
-      this.hass.callService('fan', 'xiaomi_miio_set_oscillation_angle', {
+      this.hass.callService('xiaomi_miio_fan', 'fan_set_oscillation_angle', {
         entity_id: this.config.entity,
         angle: target.value
       })
@@ -429,15 +429,15 @@ export class FanXiaomiCard extends LitElement {
         entity_id: this.config.entity
       });
     }else if(target.cmd == "buzzer"){
-      this.hass.callService('fan', attr['buzzer']?"xiaomi_miio_set_buzzer_off":"xiaomi_miio_set_buzzer_on", {
+      this.hass.callService('xiaomi_miio_fan', attr['buzzer']?"fan_set_buzzer_off":"fan_set_buzzer_on", {
         entity_id: this.config.entity
       });
     }else if(target.cmd == "natural_speed" && state=="on"){
-      this.hass.callService('fan', attr['natural_speed'] || attr['mode']==='nature'?"xiaomi_miio_set_natural_mode_off":"xiaomi_miio_set_natural_mode_on", {
+      this.hass.callService('xiaomi_miio_fan', attr['natural_speed'] || attr['mode']==='nature'?"fan_set_natural_mode_off":"fan_set_natural_mode_on", {
         entity_id: this.config.entity
       });
     }else if(target.cmd == "lock"){
-      this.hass.callService('fan', attr['child_lock']?"xiaomi_miio_set_child_lock_off":"xiaomi_miio_set_child_lock_on", {
+      this.hass.callService('xiaomi_miio_fan', attr['child_lock']?"fan_set_child_lock_off":"fan_set_child_lock_on", {
         entity_id: this.config.entity
       });
     }else if(target.cmd == "set_direction_left" && state=="on"){
@@ -500,9 +500,9 @@ export class FanXiaomiCard extends LitElement {
     let v = this.speedvalue;
     let state = this.hass.states[this.config.entity].state
     if(this.x0 && state=="on"){
-        this.hass.callService('fan', 'set_speed', {
+        this.hass.callService('fan', 'set_percentage', {
           entity_id: this.config.entity,
-          speed: Math.floor(this.speedvalue*100)
+          percentage: Math.floor(this.speedvalue*100)
         });
     }
     this.x0 = false;
@@ -669,3 +669,4 @@ window.customCards.push({
   preview: true, // Optional - defaults to false
   description: "小米电风扇卡片" // Optional
 });
+
