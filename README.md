@@ -17,7 +17,7 @@ Xiaomi Smartmi Fan Lovelace card for HASS/Home Assistant.
 
 ## Update
 ### v1.3.4
-  - fix The domain as changed #4
+  - fix The domain and the service name as changed #4
 
 ### v1.3.3
   - Update Lovelace UI configuration.
