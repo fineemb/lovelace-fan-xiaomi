@@ -1,13 +1,5 @@
-﻿/*
- * @Author        : fineemb
- * @Github        : https://github.com/fineemb
- * @Description   : 
- * @Date          : 2019-10-12 02:38:30
- * @LastEditors   : fineemb
- * @LastEditTime  : 2020-10-03 17:15:34
- */
 
-console.info("%c Xiaomi Fan Card \n%c  Version  1.3.4 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+console.info("%c Xiaomi Fan Card \n%c  Version  1.3.6 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
 import 'https://unpkg.com/@material/mwc-slider@0.18.0/mwc-slider.js?module'
 const LitElement = Object.getPrototypeOf(
   customElements.get("ha-panel-lovelace")
@@ -55,8 +47,7 @@ export class FanXiaomiCard extends LitElement {
     }
     const state = this.hass.states[this.config.entity];
     const attrs = state.attributes;
-    let nowspeed = attrs['raw_speed'] || attrs['natural_speed'] || attrs['direct_speed']
-    nowspeed = attrs['model']==='dmaker.fan.p5'?attrs['percentage'] :nowspeed/10
+    let nowspeed = attrs['natural_speed'] || attrs['direct_speed'] || attrs['raw_speed']
     return html`
     <div id="aspect-ratio" 
       style="width:${100*this.config.aspect_ratio||100}%" 
@@ -103,17 +94,25 @@ export class FanXiaomiCard extends LitElement {
         </div>
 
         <div class="chevron left ${this.over?'show':'hidden'}">
-          <ha-icon-button icon="mdi:chevron-left" class="c_icon" role="button" tabindex="0" aria-disabled="false" .cmd="${'set_direction_left'}" @click=${this._action}></ha-icon-button>
+          <mwc-icon-button class="c_icon" role="button" tabindex="0" aria-disabled="false" .cmd="${'set_direction_left'}" @click=${this._action}>
+            <ha-icon icon="mdi:chevron-left"></ha-icon>
+          </mwc-icon-button>
         </div>
         <div class="chevron right ${this.over?'show':'hidden'}">
-          <ha-icon-button icon="mdi:chevron-right" class="c_icon" role="button" tabindex="0" aria-disabled="false" .cmd="${'set_direction_right'}" @click=${this._action}></ha-icon-button>
+          <mwc-icon-button class="c_icon" role="button" tabindex="0" aria-disabled="false" .cmd="${'set_direction_right'}" @click=${this._action}>
+            <ha-icon icon="mdi:chevron-right"></ha-icon>
+          </mwc-icon-button>
         </div>
         <div class="prop">
-          <ha-icon-button id="more" icon="mdi:dots-vertical" class="c_icon" role="button" tabindex="0" aria-disabled="false" .cmd="${'more'}" @click=${this._action}></ha-icon-button>
+          <mwc-icon-button id="more" class="c_icon" role="button" tabindex="0" aria-disabled="false" .cmd="${'more'}" @click=${this._action}>
+            <ha-icon icon="mdi:dots-vertical"></ha-icon>
+          </mwc-icon-button>
         </div>
         
         <div id="buttons" class="${this.over?'show':'hidden'}" style="background:${this.config.background_color||'var(--card-background-color)'}">
-          <ha-icon-button id="lock" icon="hass:lock" class="c_icon ${attrs['child_lock']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'lock'}" @click=${this._action}></ha-icon-button>
+          <mwc-icon-button id="lock" class="c_icon ${attrs['child_lock']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'lock'}" @click=${this._action}>
+            <ha-icon icon="hass:lock"></ha-icon>
+          </mwc-icon-button>
           <mwc-icon-button class="c_icon ${attrs['delay_off_countdown']?"active":""}" .cmd="${'delay'}" @click=${this._action}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
             <path d="M12,20A7,7 0 0,1 5,13A7,7 0 0,1 12,6A7,7 0 0,1 19,13A7,7 0 0,1 12,20M12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22A9,9 0 0,0 21,13A9,9 0 0,0 12,4M12.5,8V8M7.88,3.39L6.6,1.86L2,5.71L3.29,7.24L7.88,3.39M22,5.72L17.4,1.86L16.11,3.39L20.71,7.25L22,5.72Z"></path>
@@ -138,8 +137,12 @@ export class FanXiaomiCard extends LitElement {
               </text>
             </svg>
           </mwc-icon-button>
-          <ha-icon-button id="bnatural" icon="mdi:leaf" class="c_icon ${attrs['natural_speed']?"active":attrs['mode']==='nature'?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'natural_speed'}" @click=${this._action}></ha-icon-button>
-          <ha-icon-button id="buzzer" icon="mdi:surround-sound" class="c_icon ${attrs['buzzer']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'buzzer'}" @click=${this._action}></ha-icon-button>
+          <mwc-icon-button id="bnatural" class="c_icon ${attrs['natural_speed']?"active":attrs['mode']==='nature'?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'natural_speed'}" @click=${this._action}>
+            <ha-icon icon="mdi:leaf"></ha-icon>
+          </mwc-icon-button>
+          <mwc-icon-button id="buzzer" class="c_icon ${attrs['buzzer']?"active":""}" role="button" tabindex="0" aria-disabled="false" .cmd="${'buzzer'}" @click=${this._action}>
+            <ha-icon icon="mdi:surround-sound"></ha-icon>
+          </mwc-icon-button>
         </div>
         <mwc-slider
           id="angleslider" 
@@ -183,6 +186,7 @@ export class FanXiaomiCard extends LitElement {
     #buttons{position: absolute;bottom: 0;justify-content:center;width: calc( 100% - 20px );margin: 0 10px;}
     #buttons>*{position: relative;}
     #buttons.show{display: flex;}
+    mwc-icon-button ha-icon{padding-bottom: 8px;}
     #buttons ha-icon-button ,#buttons mwc-icon-button{--mdc-icon-button-size: 32px; }
     #buttons tspan{text-anchor: middle;font-family: Helvetica, sans-serif;alignment-baseline: central;dominant-baseline: central;font-size: 10px;}
     #angleslider,#delayslider{position: absolute;bottom: 0;width: calc( 100% - 20px );margin: 0 10px;z-index: 25;}
@@ -416,7 +420,7 @@ export class FanXiaomiCard extends LitElement {
     
   }
   _action(e){
-    const target = e.target;
+    const target = e.currentTarget;
     
 
     if (!this.config || !this.hass || !target ) {
@@ -617,7 +621,7 @@ export class FanXiaomiCardEditor extends LitElement {
       ha-switch{
         margin-right: 10px;
       }
-      ha-icon-button{
+      ha-icon{
         --mdc-icon-button-size: 24px;
       }
       .fs{
