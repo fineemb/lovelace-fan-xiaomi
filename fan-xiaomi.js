@@ -1,9 +1,9 @@
 
-console.info("%c Xiaomi Fan Card \n%c  Version  1.4.0", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
-import 'https://unpkg.com/@material/mwc-slider@0.18.0/mwc-slider.js?module'
-const LitElement = Object.getPrototypeOf(
-  customElements.get("ha-panel-lovelace")
-);
+console.info("%c Xiaomi Fan Card \n%c  Version  1.4.1", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+const LitElement =
+  (customElements.get("ha-panel-lovelace") &&
+    Object.getPrototypeOf(customElements.get("ha-panel-lovelace"))) ||
+  window.LitElement;
 const html = LitElement.prototype.html;
 const css = LitElement.prototype.css;
 
@@ -185,30 +185,14 @@ export class FanXiaomiCard extends LitElement {
             <ha-icon icon="mdi:surround-sound"></ha-icon>
           </mwc-icon-button>
         </div>
-        <mwc-slider
-          id="angleslider" 
-          class="hidden" 
-          pin 
-          markers 
-          max="140" 
-          value="${attrs['oscillate']?attrs['angle']==118?"120":attrs['angle']:"0"}" 
-          step="30" 
-          style="background:${this.config.background_color||'var(--card-background-color)'}" 
+        <input type="range" id="angleslider" class="hidden" min="0" max="140" step="30"
+          value="${attrs['oscillate']?attrs['angle']==118?"120":attrs['angle']:"0"}"
           @mousedown=${this._clickSlider}
-          @change=${this._changAngle}
-        ></mwc-slider>
-        <mwc-slider
-          id="delayslider" 
-          class="hidden" 
-          pin 
-          markers 
-          max="480" 
-          value="${attrs['model']==='dmaker.fan.p5'?attrs['delay_off_countdown']:Math.ceil(attrs['delay_off_countdown']/60)}" 
-          step="60" 
-          style="background:${this.config.background_color||'var(--card-background-color)'}" 
+          @change=${this._changAngle}>
+        <input type="range" id="delayslider" class="hidden" min="0" max="480" step="60"
+          value="${attrs['model']==='dmaker.fan.p5'?attrs['delay_off_countdown']:Math.ceil(attrs['delay_off_countdown']/60)}"
           @mousedown=${this._clickSlider}
-          @change=${this._changDelay}
-        ></mwc-slider>
+          @change=${this._changDelay}>
         <div class="header" style="font-size: 9px;" class="${this.over?'hidden':'show'}">   
             <div class="name">
               <span class="ellipsis show" style="">${this.config.name}</span>
@@ -230,7 +214,7 @@ export class FanXiaomiCard extends LitElement {
     mwc-icon-button ha-icon{padding-bottom: 8px;}
     #buttons ha-icon-button ,#buttons mwc-icon-button{--mdc-icon-button-size: 32px; }
     #buttons tspan{text-anchor: middle;font-family: Helvetica, sans-serif;alignment-baseline: central;dominant-baseline: central;font-size: 10px;}
-    #angleslider,#delayslider{position: absolute;bottom: 0;width: calc( 100% - 20px );margin: 0 10px;z-index: 25;}
+    #angleslider,#delayslider{position: absolute;bottom: 40px;width: calc( 100% - 20px );margin: 0 10px;z-index: 25;}
     #speedsvg {position: absolute;bottom: 0;width: calc( 100% - 20px );margin: 0 10px;}
 
     .c_icon {position: absolute;cursor: pointer;top: 0;right: 0;z-index: 25;}
@@ -349,7 +333,48 @@ export class FanXiaomiCard extends LitElement {
     .state.show{
       display: block;
     }
-    mwc-slider.hidden{
+    #angleslider,#delayslider{
+      box-sizing: border-box;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 18px;
+      background: transparent;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+      touch-action: none;
+    }
+    #angleslider::-webkit-slider-runnable-track,#delayslider::-webkit-slider-runnable-track{
+      height: 4px;
+      border-radius: 2px;
+      background: var(--paper-item-icon-active-color);
+    }
+    #angleslider::-webkit-slider-thumb,#delayslider::-webkit-slider-thumb{
+      box-sizing: border-box;
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      margin-top: -7px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      cursor: pointer;
+      border: 2px solid var(--card-background-color);
+    }
+    #angleslider::-moz-range-thumb,#delayslider::-moz-range-thumb{
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      cursor: pointer;
+      border: 2px solid var(--card-background-color);
+    }
+    #angleslider::-moz-range-track,#delayslider::-moz-range-track{
+      height: 4px;
+      border-radius: 2px;
+      background: var(--paper-item-icon-active-color);
+    }
+    #angleslider.hidden,#delayslider.hidden{
       display: block;
       left: 100%;
     }
@@ -520,11 +545,8 @@ export class FanXiaomiCard extends LitElement {
     }
   }
   onMouseMove (e) {
-    let state = this.hass.states[this.config.entity].state
-    if(state=="on" && this.over){
-      e.preventDefault();
-    }
     if ( this.x0 !== false ) {
+      e.preventDefault();
       let value = this.getValue( e );
       this.speedvalue=value;
     }
