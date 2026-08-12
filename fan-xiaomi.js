@@ -1,12 +1,11 @@
 
-console.info("%c Xiaomi Fan Card \n%c  Version  1.3.5 ", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
+console.info("%c Xiaomi Fan Card \n%c  Version  1.4.0", "color: orange; font-weight: bold; background: black", "color: white; font-weight: bold; background: dimgray");
 import 'https://unpkg.com/@material/mwc-slider@0.18.0/mwc-slider.js?module'
 const LitElement = Object.getPrototypeOf(
   customElements.get("ha-panel-lovelace")
 );
 const html = LitElement.prototype.html;
 const css = LitElement.prototype.css;
-const includeDomains = ["fan"];
 
 export class FanXiaomiCard extends LitElement {
   setConfig(config) {
@@ -27,14 +26,56 @@ export class FanXiaomiCard extends LitElement {
           speedvalue:0
       };
   }
-  static getConfigElement() {
-    return document.createElement("fan-xiaomi-card-editor");
+  static getConfigForm() {
+    return {
+      schema: [
+        {
+          name: "entity",
+          required: true,
+          selector: { entity: { domain: "fan" } },
+        },
+        { name: "name", selector: { text: {} } },
+        {
+          name: "aspect_ratio",
+          selector: {
+            number: {
+              min: 0.3,
+              max: 1,
+              step: 0.01,
+              mode: "slider",
+            },
+          },
+        },
+        { name: "background_color", selector: { text: { type: "color" } } },
+      ],
+      computeLabel: (schema, localize) => {
+        const t = (key) =>
+          localize
+            ? localize(`ui.panel.lovelace.editor.card.generic.${key}`)
+            : key;
+        const optional = localize
+          ? localize("ui.panel.lovelace.editor.card.config.optional")
+          : "optional";
+        switch (schema.name) {
+          case "name":
+            return `${t("title")} (${optional})`;
+          case "entity":
+            return t("entity");
+          case "aspect_ratio":
+            return `${t("aspect_ratio")} (${optional})`;
+          case "background_color":
+            return "背景颜色";
+          default:
+            return undefined;
+        }
+      },
+    };
   }
   static getStubConfig() {
-    return {name: 'Fan',
+    return { name: 'Fan',
             entity: '',
-            aspect_ratio: '1',
-            background_color:''}
+            aspect_ratio: 1,
+            background_color: '' }
   }
   render() {
     let fans=[];
@@ -543,129 +584,6 @@ export class FanXiaomiCard extends LitElement {
 }
 
 customElements.define('fan-xiaomi', FanXiaomiCard);
-
-export class FanXiaomiCardEditor extends LitElement {
-  setConfig(config) {
-    const preloadCard = type => window.loadCardHelpers()
-      .then(({ createCardElement }) => createCardElement({type}))
-    preloadCard("weather-forecast");
-    customElements.get("hui-weather-forecast-card").getConfigElement();
-    this.config = config;
-  }
-
-  static get properties() {
-      return {
-          hass: {},
-          config: {}
-      };
-  }
-  render() {
-    var fanRE = new RegExp("fan\.")
-    return html`
-    <div class="card-config">
-      <paper-input
-          label="${this.hass.localize("ui.panel.lovelace.editor.card.generic.title")} (${this.hass.localize("ui.panel.lovelace.editor.card.config.optional")})"
-          .value="${this.config.name}"
-          .configValue="${"name"}"
-          @value-changed="${this._valueChanged}"
-      ></paper-input>
-      <div class="side-by-side">
-        <paper-input-container>
-            <label slot="label">${this.hass.localize("ui.panel.lovelace.editor.card.generic.aspect_ratio")} (${this.hass.localize("ui.panel.lovelace.editor.card.config.optional")}) ${this.config.aspect_ratio?this.config.aspect_ratio:1}</label>
-            
-            <input type="range" class="aspect_ratio" value="${this.config.aspect_ratio?this.config.aspect_ratio:1}" min="0.3" max="1.0" step="0.01" slot="input" .configValue="${"aspect_ratio"}" @input="${this._valueChanged}">
-        </paper-input-container>
-
-        <paper-input-container>
-            <label slot="label">背景颜色</label>
-            <input type="color" value="${this.config.background_color?this.config.background_color:""}" slot="input" .configValue="${"background_color"}" @input="${this._valueChanged}">
-            <ha-icon-button slot="suffix" icon="${this.config.background_color?"mdi:palette":"mdi:palette-outline"}" title="${this.hass.localize("ui.panel.lovelace.editor.card.map.delete")}" .type="${"background_color"}" @click=${this._delEntity}></ha-icon-button>
-        </paper-input-container>
-      </div>
-      <ha-entity-picker
-        .label="${this.hass.localize(
-          "ui.panel.lovelace.editor.card.generic.entity"
-        )} (${this.hass.localize(
-          "ui.panel.lovelace.editor.card.config.required"
-        )})"
-        .hass=${this.hass}
-        .value=${this.config.entity}
-        .configValue=${"entity"}
-        .includeDomains=${includeDomains}
-        @change=${this._valueChanged}
-        allow-custom-entity
-      ></ha-entity-picker>
-    </div>
-    `
-  }
-  static get styles() {
-    return css `
-    a{
-      color: var(--accent-color);
-    }
-    .side-by-side {
-        display: flex;
-        align-items: flex-end;
-        flex-wrap: wrap;
-      }
-      .side-by-side > * {
-        flex: 1;
-        padding-right: 4px;
-      }
-      .info > * {
-        flex: none;
-        width: calc(33% - 10px);
-        padding: 0 5px;
-      }
-
-      ha-switch{
-        margin-right: 10px;
-      }
-      ha-icon{
-        --mdc-icon-button-size: 24px;
-      }
-      .fs{
-          flex:0.3;
-      }
-      .aspect_ratio{
-        appearance: slider-horizontal;
-        color: rgb(16, 16, 16);
-        cursor: default;
-        padding: initial;
-        border: initial;
-        margin: 2px;
-      }
-    `
-  }
-  _focusEntity(e){
-    // const target = e.target;
-    e.target.value = ''
-  }
-
-  _valueChanged(e){
-    const target = e.target;
-
-    if (!this.config || !this.hass || !target ) {
-        return;
-    }
-    let configValue = target.configValue
-    let newConfig = {
-        ...this.config
-    };
-        newConfig[configValue] = target.value
-    this.configChanged(newConfig)
-  }
-
-  configChanged(newConfig) {
-    const event = new Event("config-changed", {
-      bubbles: true,
-      composed: true
-    });
-    event.detail = {config: newConfig};
-    this.dispatchEvent(event);
-  }
-}
-customElements.define("fan-xiaomi-card-editor", FanXiaomiCardEditor);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "fan-xiaomi",
